@@ -4,7 +4,7 @@ schema_version = "1.0.0"
 # Change the values according to your extension
 id = "slot_link"
 version = "0.0.0"
-name = "Slot_link"
+name = "Slot Link"
 tagline = "Link the Slots of an Action to their Targets"
 maintainer = "Mars (https://squirrelbite.com)"
 # Supported types: "add-on", "theme"

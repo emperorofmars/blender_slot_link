@@ -9,7 +9,7 @@ ifdef::env-github[]
 endif::[]
 
 If you need to create multiple animations (Actions) in Blender, only one of them can be linked to its target properties.
-When you link the Slots to another animation (Action), the previous animation looses the information which properties it targets. The Slots are orphaned.
+When you link the Slots to another animation (Action), the previous animation looses the information of which properties it targets. The Slots are orphaned.
 
 This extension provides artists a way to manually set the targeted objects of an animation.
 
@@ -20,9 +20,9 @@ In a possible future iteration of this extension, Slots could be automatically r
 
 image::docs/img/SlotLinkEditor.png[Screenshot of the Slot Link editor. This GUI allows specifying the targeted Objects of the Slots of a Blender Action.]
 
-This allows targeting Objects only on purpose. Blender's data-model is a mess. Slots which animate Blendshapes (shape-keys) target the 'Key' data-block of a mesh.
+This allows targeting objects only on purpose. Blender's data-model is a mess. Slots which animate Blendshapes (shape-keys) target the 'Key' data-block of a mesh.
 In reality, the blendshape pose gets animated, not the mesh resource itself. In Python code, it would become impossible to figure out which instance of the mesh is meant.
-By allowing only Objects to be targeted, this issue is alleviated. This also matches how the rest of the 3d world generally works.
+By allowing only objects to be targeted, this issue is alleviated. This also matches how the rest of the 3d world generally works.
 
 Writing an exporter for Blender 4.4 animations should become possible and fairly straight forward if this extension is used.
 

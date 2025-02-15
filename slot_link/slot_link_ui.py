@@ -35,13 +35,13 @@ class SlotLinkEditor(bpy.types.Panel):
 			box = self.layout.box()
 			box.label(text="Slot " + str(slot_index) + ": " + str(slot.name_display))
 
-			slot_assignment = None
-			for assignment in context.active_action.slot_link:
-				if(assignment.slot_handle == slot.handle):
-					slot_assignment = assignment
+			selected_slot_link = None
+			for slot_link in context.active_action.slot_links:
+				if(slot_link.slot_handle == slot.handle):
+					selected_slot_link = slot_link
 					break
-			if(slot_assignment):
-				box.prop(assignment, "target")
+			if(selected_slot_link):
+				box.prop(selected_slot_link, "target")
 			else:
 				box.operator(AddSlotLink.bl_idname).index = slot_index
 

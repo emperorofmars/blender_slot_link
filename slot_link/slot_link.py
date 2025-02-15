@@ -15,7 +15,7 @@ class AddSlotLink(bpy.types.Operator):
 	index: bpy.props.IntProperty(name = "Slot Index", default=-1) # type: ignore
 
 	def execute(self, context):
-		slot_link = context.active_action.slot_link.add()
+		slot_link = context.active_action.slot_links.add()
 		slot_link.slot_handle = context.active_action.slots[self.index].handle
 		return {"FINISHED"}
 
@@ -32,16 +32,16 @@ class RemoveSlotAssignment(bpy.types.Operator):
 		return context.window_manager.invoke_confirm(self, event)
 
 	def execute(self, context):
-		context.active_action.slot_link.remove(self.index)
+		context.active_action.slot_links.remove(self.index)
 		return {"FINISHED"}
 
 
 def register():
-	bpy.types.Action.slot_link = bpy.props.CollectionProperty(type=SlotLink, name="Slot Links") # type: ignore
+	bpy.types.Action.slot_links = bpy.props.CollectionProperty(type=SlotLink, name="Slot Links") # type: ignore
 	bpy.types.Scene.slot_link_show_info = bpy.props.BoolProperty(name="Show Slot Link Info", default=True) # type: ignore
 
 def unregister():
-	if hasattr(bpy.types.Action, "slot_link"):
-		del bpy.types.Action.slot_link
+	if hasattr(bpy.types.Action, "slot_links"):
+		del bpy.types.Action.slot_links
 	if hasattr(bpy.types.Scene, "slot_link_show_info"):
 		del bpy.types.Scene.slot_link_show_info

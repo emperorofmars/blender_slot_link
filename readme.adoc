@@ -1,0 +1,25 @@
+= Blender Slot Link
+:homepage: https://github.com/emperorofmars/blender_slot_link
+:hardbreaks-option:
+:library: Asciidoctor
+:table-caption!:
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+endif::[]
+
+If you need to create multiple animations in Blender, only one of them can be linked to its target properties.
+When you link the Slots to another animation (Action), the previous animation looses the information which properties it targets. The Slots are orphaned.
+
+This extension provides artists a way to manually set the targeted objects of an animation.
+
+With this knowledge, exporters can actually export animations from Blender.
+
+In a possible future iteration of this extension, Slots could be automatically re-assigned when a new Action is selected.
+
+== License
+All source-code in this repository, except when noted in individual files and/or directories, is licensed under either:
+
+* MIT License (LICENSE-MIT or http://opensource.org/licenses/MIT[])
+* Apache License, Version 2.0 (LICENSE-APACHE2 or http://www.apache.org/licenses/LICENSE-2.0[])
+* GNU General Public License v3.0 or later (LICENSE-GPL3+ or https://www.gnu.org/licenses/gpl-3.0-standalone.html[])

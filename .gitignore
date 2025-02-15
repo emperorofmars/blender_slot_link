@@ -1,0 +1,12 @@
+**/*.vscode
+
+*.blend?
+*.zip
+*~
+
+__pycache__
+*.pyc
+.DS_Store
+*.py[cod]
+*$py.class
+

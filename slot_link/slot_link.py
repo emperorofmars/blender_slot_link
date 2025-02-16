@@ -24,7 +24,7 @@ class AddSlotLink(bpy.types.Operator):
 		return {"FINISHED"}
 
 
-class RemoveSlotAssignment(bpy.types.Operator):
+class RemoveSlotLink(bpy.types.Operator):
 	bl_idname = "slot_link.remove"
 	bl_label = "Remove Slot Link"
 	bl_category = "Slot Link"

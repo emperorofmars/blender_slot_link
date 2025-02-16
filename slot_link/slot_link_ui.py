@@ -1,6 +1,6 @@
 import bpy
 
-from .slot_link import AddSlotLink, RemoveSlotAssignment
+from .slot_link import AddSlotLink, RemoveSlotLink
 from .link_applier import LinkSlots, UnlinkAllSlots
 
 
@@ -42,6 +42,8 @@ class SlotLinkEditor(bpy.types.Panel):
 		self.layout.operator(LinkSlots.bl_idname)
 		self.layout.separator(factor=2, type="LINE")
 
+		handled_slot_links = []
+
 		for slot_index, slot in enumerate(context.active_action.slots):
 			box = self.layout.box()
 			box.label(text="Slot " + str(slot_index) + " (" + str(slot.target_id_type) + "): " + str(slot.name_display))
@@ -52,11 +54,23 @@ class SlotLinkEditor(bpy.types.Panel):
 					selected_slot_link = slot_link
 					break
 			if(selected_slot_link):
+				handled_slot_links.append(selected_slot_link)
 				box.prop(selected_slot_link, "target")
 				if(slot.target_id_type in ["MATERIAL", "NODETREE"]):
-					box.prop(selected_slot_link, "datablock_index")
+					box.prop(selected_slot_link, "datablock_index", text="Material Index")
 			else:
 				box.operator(AddSlotLink.bl_idname).index = slot_index
 
-		# TODO deal with orphan assignment objects
+		orphan_slot_links = []
+		for slot_index, slot_link in enumerate(context.active_action.slot_links):
+			if(slot_link not in handled_slot_links):
+				orphan_slot_links.append((slot_index, slot_link))
 
+		if(len(orphan_slot_links) > 0):
+			self.layout.separator(factor=2, type="LINE")
+			self.layout.label(text="These Links don't belong to any Slot!")
+			self.layout.label(text="Consider deleting them.")
+			for slot_index, slot_link in orphan_slot_links:
+				box = self.layout.box().row()
+				box.label(text="Slot " + str(slot_index) + " (" + str(slot.target_id_type) + "): " + str(slot.name_display))
+				box.operator(RemoveSlotLink.bl_idname).index = slot_index

@@ -53,7 +53,7 @@ class SlotLinkEditor(bpy.types.Panel):
 					break
 			if(selected_slot_link):
 				box.prop(selected_slot_link, "target")
-				if(slot.target_id_type == "MATERIAL"):
+				if(slot.target_id_type in ["MATERIAL", "NODETREE"]):
 					box.prop(selected_slot_link, "datablock_index")
 			else:
 				box.operator(AddSlotLink.bl_idname).index = slot_index

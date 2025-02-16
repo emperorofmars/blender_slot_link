@@ -14,8 +14,9 @@ If you need to create multiple actions, only one of them can be linked to all it
 When you link the slots to another action, the previous action looses the information of which exact data-blocks it targets. Its slots are orphaned.
 
 With this extension, you can wire all the slots automatically. No need to manually re-assign the animation data.
+You should hopefully never have to touch the `Animation` panel ever again.
 
-Also writing an exporter for animations in Blender 4.4+ should become possible and fairly straight forward if this extension is used.
+Writing an exporter for animations in Blender 4.4+ should become possible and fairly straight forward if this extension is used.
 
 image::docs/img/SlotLinkEditor.png[Screenshot of the Slot Link editor. This GUI allows specifying the targeted Objects of the Slots of a Blender Action.]
 

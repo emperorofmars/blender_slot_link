@@ -13,20 +13,21 @@ This extension provides artists a way to manually set the targeted objects of an
 If you need to create multiple actions, only one of them can be linked to all its target data-blocks.
 When you link the slots to another action, the previous action looses the information of which exact data-blocks it targets. Its slots are orphaned.
 
-Writing an exporter for animations in Blender 4.4 should become possible and fairly straight forward if this extension is used.
+With this extension, you can wire all the slots automatically. No need to manually re-assign the animation data.
+
+Also writing an exporter for animations in Blender 4.4+ should become possible and fairly straight forward if this extension is used.
 
 image::docs/img/SlotLinkEditor.png[Screenshot of the Slot Link editor. This GUI allows specifying the targeted Objects of the Slots of a Blender Action.]
-
-In a possible future iteration of this extension, slots could be automatically re-assigned when a new action is selected.
 
 This allows targeting only objects on purpose, for now.
 The data-model Blender exposes to Python doesn't match how things actually work.
 
-For example, slots which animate shape-key pose have to target the 'Key' data-block of a mesh.
+For example, slots which animate the shape-key pose have to target the 'Key' data-block of a mesh resource.
 In reality, an implicit shape-key 'pose' gets animated, not the values on the mesh resource itself.
-In Python code, it would become impossible to figure out which instance of the mesh is meant.
+In Python code, it would become impossible to figure out which instance of the mesh is meant, if the link targeted the mesh resource.
 
 By allowing only objects to be targeted, this issue is alleviated. This also matches how the rest of the 3d world generally works.
+
 TODO maybe allow a select few other types, like collections and scenes.
 
 == License

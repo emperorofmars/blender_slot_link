@@ -1,6 +1,8 @@
 import bpy
 
 from .slot_link import AddSlotLink, RemoveSlotAssignment
+from .link_applier import LinkSlots, UnlinkAllSlots
+
 
 class SlotLinkEditor(bpy.types.Panel):
 	"""Link the Slots of an Action to their Targets"""
@@ -31,9 +33,18 @@ class SlotLinkEditor(bpy.types.Panel):
 		self.layout.prop(context.scene, "slot_link_show_info")
 		self.layout.separator(factor=1, type="SPACE")
 
+		# Does this even work? All actions from a previous Blender version are not marked as legacy.
+		if(context.active_action.is_action_legacy):
+			self.layout.label(text="Legacy Actions are not supported!")
+			return
+
+		self.layout.operator(UnlinkAllSlots.bl_idname)
+		self.layout.operator(LinkSlots.bl_idname)
+		self.layout.separator(factor=2, type="LINE")
+
 		for slot_index, slot in enumerate(context.active_action.slots):
 			box = self.layout.box()
-			box.label(text="Slot " + str(slot_index) + ": " + str(slot.name_display))
+			box.label(text="Slot " + str(slot_index) + " (" + str(slot.target_id_type) + "): " + str(slot.name_display))
 
 			selected_slot_link = None
 			for slot_link in context.active_action.slot_links:
@@ -42,6 +53,8 @@ class SlotLinkEditor(bpy.types.Panel):
 					break
 			if(selected_slot_link):
 				box.prop(selected_slot_link, "target")
+				if(slot.target_id_type == "MATERIAL"):
+					box.prop(selected_slot_link, "datablock_index")
 			else:
 				box.operator(AddSlotLink.bl_idname).index = slot_index
 

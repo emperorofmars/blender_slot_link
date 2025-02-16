@@ -4,6 +4,7 @@ import bpy
 class SlotLink(bpy.types.PropertyGroup):
 	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1) # type: ignore
 	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target") # type: ignore
+	datablock_index: bpy.props.IntProperty(name="Datablock Index", default=0, min=0) # type: ignore
 
 
 class AddSlotLink(bpy.types.Operator):
@@ -13,6 +14,9 @@ class AddSlotLink(bpy.types.Operator):
 	bl_options = {"REGISTER", "UNDO"}
 
 	index: bpy.props.IntProperty(name = "Slot Index", default=-1) # type: ignore
+
+	@classmethod
+	def poll(cls, context): return context.active_action is not None
 
 	def execute(self, context):
 		slot_link = context.active_action.slot_links.add()
@@ -27,6 +31,9 @@ class RemoveSlotAssignment(bpy.types.Operator):
 	bl_options = {"REGISTER", "UNDO"}
 
 	index: bpy.props.IntProperty(default=-1) # type: ignore
+
+	@classmethod
+	def poll(cls, context): return context.active_action is not None
 
 	def invoke(self, context, event):
 		return context.window_manager.invoke_confirm(self, event)

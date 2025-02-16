@@ -19,11 +19,15 @@ image::docs/img/SlotLinkEditor.png[Screenshot of the Slot Link editor. This GUI 
 
 In a possible future iteration of this extension, slots could be automatically re-assigned when a new action is selected.
 
-This allows targeting only objects on purpose. The data-model Blender exposes to Python doesn't match how things actually work.
+This allows targeting only objects on purpose, for now.
+The data-model Blender exposes to Python doesn't match how things actually work.
+
 For example, slots which animate shape-key pose have to target the 'Key' data-block of a mesh.
 In reality, an implicit shape-key 'pose' gets animated, not the values on the mesh resource itself.
 In Python code, it would become impossible to figure out which instance of the mesh is meant.
+
 By allowing only objects to be targeted, this issue is alleviated. This also matches how the rest of the 3d world generally works.
+TODO maybe allow a select few other types, like collections and scenes.
 
 == License
 All source-code in this repository, except when noted in individual files and/or directories, is licensed under either:

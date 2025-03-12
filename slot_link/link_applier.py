@@ -23,7 +23,9 @@ def unlink_all_slots(action: bpy.types.Action):
 	for thing in bpy.data.images: unlink_slot(action, thing)
 	for thing in bpy.data.lattices: unlink_slot(action, thing)
 	for thing in bpy.data.libraries: unlink_slot(action, thing)
-	for thing in bpy.data.lights: unlink_slot(action, thing)
+	for thing in bpy.data.lights:
+		unlink_slot(action, thing)
+		# TODO also unlink its embedded node-trees
 	for thing in bpy.data.lightprobes: unlink_slot(action, thing)
 	for thing in bpy.data.linestyles: unlink_slot(action, thing)
 	for thing in bpy.data.masks: unlink_slot(action, thing)
@@ -43,7 +45,9 @@ def unlink_all_slots(action: bpy.types.Action):
 	for thing in bpy.data.palettes: unlink_slot(action, thing)
 	for thing in bpy.data.particles: unlink_slot(action, thing)
 	for thing in bpy.data.pointclouds: unlink_slot(action, thing)
-	for thing in bpy.data.scenes: unlink_slot(action, thing)
+	for thing in bpy.data.scenes:
+		unlink_slot(action, thing)
+		# TODO also unlink its embedded node-trees
 	for thing in bpy.data.screens: unlink_slot(action, thing)
 	for thing in bpy.data.sounds: unlink_slot(action, thing)
 	for thing in bpy.data.speakers: unlink_slot(action, thing)
@@ -52,12 +56,14 @@ def unlink_all_slots(action: bpy.types.Action):
 	for thing in bpy.data.volumes: unlink_slot(action, thing)
 	for thing in bpy.data.window_managers: unlink_slot(action, thing)
 	for thing in bpy.data.workspaces: unlink_slot(action, thing)
-	for thing in bpy.data.worlds: unlink_slot(action, thing)
+	for thing in bpy.data.worlds:
+		unlink_slot(action, thing)
+		# TODO also unlink its embedded node-trees
 
 class UnlinkAllSlots(bpy.types.Operator):
 	bl_idname = "slot_link.unlink_all"
 	bl_label = "Unlink All Slots Globally"
-	bl_category = "Slot Link"
+	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
 	@classmethod
@@ -123,7 +129,7 @@ def link_slots(action: bpy.types.Action):
 class LinkSlots(bpy.types.Operator):
 	bl_idname = "slot_link.link"
 	bl_label = "Link This Action"
-	bl_category = "Slot Link"
+	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
 	@classmethod

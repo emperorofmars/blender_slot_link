@@ -10,7 +10,7 @@ class SlotLink(bpy.types.PropertyGroup):
 class AddSlotLink(bpy.types.Operator):
 	bl_idname = "slot_link.add"
 	bl_label = "Add Slot Link"
-	bl_category = "Slot Link"
+	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
 	index: bpy.props.IntProperty(name = "Slot Index", default=-1) # type: ignore
@@ -27,7 +27,7 @@ class AddSlotLink(bpy.types.Operator):
 class RemoveSlotLink(bpy.types.Operator):
 	bl_idname = "slot_link.remove"
 	bl_label = "Remove Slot Link"
-	bl_category = "Slot Link"
+	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
 	index: bpy.props.IntProperty(default=-1) # type: ignore

@@ -25,7 +25,8 @@ def unlink_all_slots(action: bpy.types.Action):
 	for thing in bpy.data.libraries: unlink_slot(action, thing)
 	for thing in bpy.data.lights:
 		unlink_slot(action, thing)
-		# TODO also unlink its embedded node-trees
+		if(thing.node_tree):
+			unlink_slot(action, thing.node_tree)
 	for thing in bpy.data.lightprobes: unlink_slot(action, thing)
 	for thing in bpy.data.linestyles: unlink_slot(action, thing)
 	for thing in bpy.data.masks: unlink_slot(action, thing)
@@ -47,7 +48,8 @@ def unlink_all_slots(action: bpy.types.Action):
 	for thing in bpy.data.pointclouds: unlink_slot(action, thing)
 	for thing in bpy.data.scenes:
 		unlink_slot(action, thing)
-		# TODO also unlink its embedded node-trees
+		if(thing.node_tree):
+			unlink_slot(action, thing.node_tree)
 	for thing in bpy.data.screens: unlink_slot(action, thing)
 	for thing in bpy.data.sounds: unlink_slot(action, thing)
 	for thing in bpy.data.speakers: unlink_slot(action, thing)
@@ -58,7 +60,8 @@ def unlink_all_slots(action: bpy.types.Action):
 	for thing in bpy.data.workspaces: unlink_slot(action, thing)
 	for thing in bpy.data.worlds:
 		unlink_slot(action, thing)
-		# TODO also unlink its embedded node-trees
+		if(thing.node_tree):
+			unlink_slot(action, thing.node_tree)
 
 class UnlinkAllSlots(bpy.types.Operator):
 	bl_idname = "slot_link.unlink_all"

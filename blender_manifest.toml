@@ -77,4 +77,5 @@ paths_exclude_pattern = [
 	"/.git/",
 	"/*.zip",
 	"/.vscode/",
+	"/docs/",
 ]

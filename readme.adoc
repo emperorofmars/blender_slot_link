@@ -8,28 +8,21 @@ ifdef::env-github[]
 :note-caption: :information_source:
 endif::[]
 
-This extension provides artists a way to manually set the targeted objects of an animation (Action).
+Preserve the targets of Actions and Slots, even after unlinked.
 
-If you need to create multiple actions, only one of them can be linked to all its target data-blocks.
-When you link the slots to another action, the previous action looses the information of which exact data-blocks it targets. Its slots are orphaned.
+Re-apply them anytime by pressing "Link This Action".
+Prepare the Scene for animating a new Action by pressing "Unlink all Slots".
 
-With this extension, you can wire all the slots automatically. No need to manually re-assign the animation data.
-You should hopefully never have to touch the `Animation` panel ever again.
-
-Writing an exporter for animations in Blender 4.4+ should become possible and fairly straight forward if this extension is used.
+No need to manually re-link the Actions and Slots manually and having to remember where.
 
 image::docs/img/SlotLinkEditor.png[Screenshot of the Slot Link editor. This GUI allows specifying the targeted Objects of the Slots of a Blender Action.]
 
+Writing an exporter for animations in Blender 4.4+ should become possible and fairly straight forward if this extension is used. I am working on a highly experimental one here: https://github.com/emperorofmars/stf_blender
+
 This allows targeting only objects on purpose, for now.
-The data-model Blender exposes to Python doesn't match how things actually work.
-
-For example, slots which animate the shape-key pose have to target the 'Key' data-block of a mesh resource.
-In reality, an implicit shape-key 'pose' gets animated, not the values on the mesh resource itself.
-In Python code, it would become impossible to figure out which instance of the mesh is meant, if the link targeted the mesh resource.
-
-By allowing only objects to be targeted, this issue is alleviated. This also matches how the rest of the 3d world generally works.
-
 TODO maybe allow a select few other types, like collections and scenes.
+
+This matches how the rest of the world works. That way you can animate the shape-keys of a specific instance of a mesh, instead of the mesh itself. While this won't replay 100% correctly in Blender, it will in the game-engine you export this to, if that ever becomes possible.
 
 == License
 All source-code in this repository, except when noted in individual files and/or directories, is licensed under either:

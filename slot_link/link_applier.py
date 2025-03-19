@@ -65,7 +65,7 @@ def unlink_all_slots(action: bpy.types.Action):
 
 class UnlinkAllSlots(bpy.types.Operator):
 	bl_idname = "slot_link.unlink_all"
-	bl_label = "Unlink All Slots Globally"
+	bl_label = "Unlink All Slots"
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 

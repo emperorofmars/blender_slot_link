@@ -10,7 +10,7 @@ endif::[]
 
 Preserve the targets of Actions and Slots, even after unlinked.
 
-Re-apply them anytime by pressing `Link This Action`.
+Re-apply them anytime by pressing `Link`.
 Prepare the Scene for animating a new Action by pressing `Prepare`.
 
 No need to manually re-link the Actions and Slots manually and having to remember where.

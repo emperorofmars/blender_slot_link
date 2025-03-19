@@ -131,7 +131,7 @@ def link_slots(action: bpy.types.Action):
 
 class LinkSlots(bpy.types.Operator):
 	bl_idname = "slot_link.link"
-	bl_label = "Link This Action"
+	bl_label = "Link"
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 

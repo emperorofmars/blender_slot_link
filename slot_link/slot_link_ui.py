@@ -21,7 +21,7 @@ class SlotLinkEditor(bpy.types.Panel):
 			self.layout.label(text="Preserve the targets of Actions")
 			self.layout.label(text="and Slots, even if unlinked.")
 			self.layout.separator(factor=1, type="SPACE")
-			self.layout.label(text="Re-apply them by pressing \"Link This Action\".")
+			self.layout.label(text="Re-apply them by pressing \"Link\".")
 			self.layout.separator(factor=1, type="SPACE")
 			self.layout.label(text="Prepare the Scene for animating a new")
 			self.layout.label(text="Action by pressing \"Prepare\".")
@@ -40,8 +40,9 @@ class SlotLinkEditor(bpy.types.Panel):
 			self.layout.label(text="Legacy Actions are not supported!")
 			return
 
-		self.layout.operator(PrepareLinks.bl_idname)
-		self.layout.operator(LinkSlots.bl_idname)
+		row = self.layout.row()
+		row.operator(PrepareLinks.bl_idname)
+		row.operator(LinkSlots.bl_idname)
 		self.layout.separator(factor=2, type="LINE")
 
 		handled_slot_links = []

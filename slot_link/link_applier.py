@@ -3,69 +3,69 @@ import bpy
 from .slot_link import SlotLink
 
 
-def unlink_slot(action: bpy.types.Action, blender_data_block):
+def prepare_slot(action: bpy.types.Action, blender_data_block):
 	if(hasattr(blender_data_block, "animation_data") and blender_data_block.animation_data and blender_data_block.animation_data.action):
 		blender_data_block.animation_data.action = action
 		blender_data_block.animation_data.action_slot = None
 
-def unlink_all_slots(action: bpy.types.Action):
+def prepare_all_slots(action: bpy.types.Action):
 	# why u no polymorphism?
-	for thing in bpy.data.actions: unlink_slot(action, thing)
-	for thing in bpy.data.armatures: unlink_slot(action, thing)
-	for thing in bpy.data.brushes: unlink_slot(action, thing)
-	for thing in bpy.data.cache_files: unlink_slot(action, thing)
-	for thing in bpy.data.cameras: unlink_slot(action, thing)
-	for thing in bpy.data.collections: unlink_slot(action, thing)
-	for thing in bpy.data.curves: unlink_slot(action, thing)
-	for thing in bpy.data.fonts: unlink_slot(action, thing)
-	for thing in bpy.data.grease_pencils: unlink_slot(action, thing)
-	for thing in bpy.data.grease_pencils_v3: unlink_slot(action, thing)
-	for thing in bpy.data.images: unlink_slot(action, thing)
-	for thing in bpy.data.lattices: unlink_slot(action, thing)
-	for thing in bpy.data.libraries: unlink_slot(action, thing)
+	for thing in bpy.data.actions: prepare_slot(action, thing)
+	for thing in bpy.data.armatures: prepare_slot(action, thing)
+	for thing in bpy.data.brushes: prepare_slot(action, thing)
+	for thing in bpy.data.cache_files: prepare_slot(action, thing)
+	for thing in bpy.data.cameras: prepare_slot(action, thing)
+	for thing in bpy.data.collections: prepare_slot(action, thing)
+	for thing in bpy.data.curves: prepare_slot(action, thing)
+	for thing in bpy.data.fonts: prepare_slot(action, thing)
+	for thing in bpy.data.grease_pencils: prepare_slot(action, thing)
+	for thing in bpy.data.grease_pencils_v3: prepare_slot(action, thing)
+	for thing in bpy.data.images: prepare_slot(action, thing)
+	for thing in bpy.data.lattices: prepare_slot(action, thing)
+	for thing in bpy.data.libraries: prepare_slot(action, thing)
 	for thing in bpy.data.lights:
-		unlink_slot(action, thing)
+		prepare_slot(action, thing)
 		if(thing.node_tree):
-			unlink_slot(action, thing.node_tree)
-	for thing in bpy.data.lightprobes: unlink_slot(action, thing)
-	for thing in bpy.data.linestyles: unlink_slot(action, thing)
-	for thing in bpy.data.masks: unlink_slot(action, thing)
+			prepare_slot(action, thing.node_tree)
+	for thing in bpy.data.lightprobes: prepare_slot(action, thing)
+	for thing in bpy.data.linestyles: prepare_slot(action, thing)
+	for thing in bpy.data.masks: prepare_slot(action, thing)
 	for thing in bpy.data.materials:
-		unlink_slot(action, thing)
+		prepare_slot(action, thing)
 		if(thing.node_tree):
-			unlink_slot(action, thing.node_tree)
+			prepare_slot(action, thing.node_tree)
 	for thing in bpy.data.meshes:
-		unlink_slot(action, thing)
+		prepare_slot(action, thing)
 		if(thing.shape_keys):
-			unlink_slot(action, thing.shape_keys)
-	for thing in bpy.data.metaballs: unlink_slot(action, thing)
-	for thing in bpy.data.movieclips: unlink_slot(action, thing)
-	for thing in bpy.data.node_groups: unlink_slot(action, thing)
-	for thing in bpy.data.objects: unlink_slot(action, thing)
-	for thing in bpy.data.paint_curves: unlink_slot(action, thing)
-	for thing in bpy.data.palettes: unlink_slot(action, thing)
-	for thing in bpy.data.particles: unlink_slot(action, thing)
-	for thing in bpy.data.pointclouds: unlink_slot(action, thing)
+			prepare_slot(action, thing.shape_keys)
+	for thing in bpy.data.metaballs: prepare_slot(action, thing)
+	for thing in bpy.data.movieclips: prepare_slot(action, thing)
+	for thing in bpy.data.node_groups: prepare_slot(action, thing)
+	for thing in bpy.data.objects: prepare_slot(action, thing)
+	for thing in bpy.data.paint_curves: prepare_slot(action, thing)
+	for thing in bpy.data.palettes: prepare_slot(action, thing)
+	for thing in bpy.data.particles: prepare_slot(action, thing)
+	for thing in bpy.data.pointclouds: prepare_slot(action, thing)
 	for thing in bpy.data.scenes:
-		unlink_slot(action, thing)
+		prepare_slot(action, thing)
 		if(thing.node_tree):
-			unlink_slot(action, thing.node_tree)
-	for thing in bpy.data.screens: unlink_slot(action, thing)
-	for thing in bpy.data.sounds: unlink_slot(action, thing)
-	for thing in bpy.data.speakers: unlink_slot(action, thing)
-	for thing in bpy.data.texts: unlink_slot(action, thing)
-	for thing in bpy.data.textures: unlink_slot(action, thing)
-	for thing in bpy.data.volumes: unlink_slot(action, thing)
-	for thing in bpy.data.window_managers: unlink_slot(action, thing)
-	for thing in bpy.data.workspaces: unlink_slot(action, thing)
+			prepare_slot(action, thing.node_tree)
+	for thing in bpy.data.screens: prepare_slot(action, thing)
+	for thing in bpy.data.sounds: prepare_slot(action, thing)
+	for thing in bpy.data.speakers: prepare_slot(action, thing)
+	for thing in bpy.data.texts: prepare_slot(action, thing)
+	for thing in bpy.data.textures: prepare_slot(action, thing)
+	for thing in bpy.data.volumes: prepare_slot(action, thing)
+	for thing in bpy.data.window_managers: prepare_slot(action, thing)
+	for thing in bpy.data.workspaces: prepare_slot(action, thing)
 	for thing in bpy.data.worlds:
-		unlink_slot(action, thing)
+		prepare_slot(action, thing)
 		if(thing.node_tree):
-			unlink_slot(action, thing.node_tree)
+			prepare_slot(action, thing.node_tree)
 
-class UnlinkAllSlots(bpy.types.Operator):
-	bl_idname = "slot_link.unlink_all"
-	bl_label = "Unlink All Slots"
+class PrepareLinks(bpy.types.Operator):
+	bl_idname = "slot_link.prepare"
+	bl_label = "Prepare"
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
@@ -73,7 +73,7 @@ class UnlinkAllSlots(bpy.types.Operator):
 	def poll(cls, context): return context.active_action is not None
 
 	def execute(self, context):
-		unlink_all_slots(context.active_action)
+		prepare_all_slots(context.active_action)
 		return {"FINISHED"}
 
 
@@ -139,7 +139,7 @@ class LinkSlots(bpy.types.Operator):
 	def poll(cls, context): return context.active_action is not None
 
 	def execute(self, context):
-		unlink_all_slots(context.active_action)
+		prepare_all_slots(context.active_action)
 		link_slots(context.active_action)
 		return {"FINISHED"}
 

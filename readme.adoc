@@ -10,8 +10,8 @@ endif::[]
 
 Preserve the targets of Actions and Slots, even after unlinked.
 
-Re-apply them anytime by pressing "Link This Action".
-Prepare the Scene for animating a new Action by pressing "Unlink all Slots".
+Re-apply them anytime by pressing `Link This Action`.
+Prepare the Scene for animating a new Action by pressing `Prepare`.
 
 No need to manually re-link the Actions and Slots manually and having to remember where.
 
@@ -20,9 +20,9 @@ image::docs/img/SlotLinkEditor.png[Screenshot of the Slot Link editor. This GUI 
 Writing an exporter for animations in Blender 4.4+ should become possible and fairly straight forward if this extension is used. I am working on a highly experimental one here: https://github.com/emperorofmars/stf_blender
 
 This allows targeting only objects on purpose, for now.
-TODO maybe allow a select few other types, like collections and scenes.
+TODO: allow a select few other types, like collections and scenes.
 
-This matches how the rest of the world works. That way you can animate the shape-keys of a specific instance of a mesh, instead of the mesh itself. While this won't replay 100% correctly in Blender, it will in the game-engine you export this to, if that ever becomes possible.
+This matches how the rest of the world works. That way you can animate the shape-keys of a specific instance of a mesh, instead of the mesh resource itself. While this won't replay 100% correctly in Blender, it will in the game-engine you export this to, if that ever becomes possible.
 
 == License
 All source-code in this repository, except when noted in individual files and/or directories, is licensed under either:

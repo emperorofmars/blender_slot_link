@@ -1,7 +1,7 @@
 import bpy
 
 from .slot_link import AddSlotLink, RemoveSlotLink
-from .link_applier import LinkSlots, UnlinkAllSlots
+from .link_applier import LinkSlots, PrepareLinks
 
 
 class SlotLinkEditor(bpy.types.Panel):
@@ -24,7 +24,7 @@ class SlotLinkEditor(bpy.types.Panel):
 			self.layout.label(text="Re-apply them by pressing \"Link This Action\".")
 			self.layout.separator(factor=1, type="SPACE")
 			self.layout.label(text="Prepare the Scene for animating a new")
-			self.layout.label(text="Action by pressing \"Unlink all Slots\".")
+			self.layout.label(text="Action by pressing \"Prepare\".")
 			self.layout.separator(factor=1, type="SPACE")
 			self.layout.label(text="Other extensions can use this information.")
 			self.layout.label(text="For example for export.")
@@ -40,7 +40,7 @@ class SlotLinkEditor(bpy.types.Panel):
 			self.layout.label(text="Legacy Actions are not supported!")
 			return
 
-		self.layout.operator(UnlinkAllSlots.bl_idname)
+		self.layout.operator(PrepareLinks.bl_idname)
 		self.layout.operator(LinkSlots.bl_idname)
 		self.layout.separator(factor=2, type="LINE")
 

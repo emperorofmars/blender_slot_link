@@ -45,10 +45,7 @@ class RemoveSlotLink(bpy.types.Operator):
 
 def register():
 	bpy.types.Action.slot_links = bpy.props.CollectionProperty(type=SlotLink, name="Slot Links") # type: ignore
-	bpy.types.Scene.slot_link_show_info = bpy.props.BoolProperty(name="Show Slot Link Info", default=True) # type: ignore
 
 def unregister():
 	if hasattr(bpy.types.Action, "slot_links"):
 		del bpy.types.Action.slot_links
-	if hasattr(bpy.types.Scene, "slot_link_show_info"):
-		del bpy.types.Scene.slot_link_show_info

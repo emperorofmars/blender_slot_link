@@ -2,6 +2,7 @@ import bpy
 
 from .slot_link import AddSlotLink, RemoveSlotLink
 from .link_applier import LinkSlots, PrepareLinks
+from . import package_key
 
 
 class SlotLinkEditor(bpy.types.Panel):
@@ -17,7 +18,7 @@ class SlotLinkEditor(bpy.types.Panel):
 		return (context.active_action is not None)
 
 	def draw(self, context):
-		if(context.scene.slot_link_show_info):
+		if(context.preferences.addons[package_key.package_key].preferences.slot_link_show_info):
 			self.layout.label(text="Preserve the targets of Actions")
 			self.layout.label(text="and Slots, even if unlinked.")
 			self.layout.separator(factor=1, type="SPACE")
@@ -32,17 +33,15 @@ class SlotLinkEditor(bpy.types.Panel):
 			self.layout.label(text="Note: This is a janky workaround,")
 			self.layout.label(text="but without an alternative.")
 			self.layout.label(text="Good luck!")
-		self.layout.prop(context.scene, "slot_link_show_info")
+		self.layout.prop(context.preferences.addons[package_key.package_key].preferences, "slot_link_show_info")
 		self.layout.separator(factor=1, type="SPACE")
-
-		# Does this even work? All actions from a previous Blender version are not marked as legacy.
-		if(context.active_action.is_action_legacy):
-			self.layout.label(text="Legacy Actions are not supported!")
-			return
 
 		row = self.layout.row()
 		row.operator(PrepareLinks.bl_idname)
-		row.operator(LinkSlots.bl_idname)
+		if(not context.active_action.is_action_legacy):
+			row.operator(LinkSlots.bl_idname)
+		else:
+			self.layout.label(text="Please add a new Slot")
 		self.layout.separator(factor=2, type="LINE")
 
 		handled_slot_links = []

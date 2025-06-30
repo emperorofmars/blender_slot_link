@@ -9,14 +9,12 @@ auto_load.init()
 
 
 class ExampleAddonPreferences(bpy.types.AddonPreferences):
-	# This must match the add-on name, use `__package__`
-	# when defining this for add-on extensions or a sub-module of a python package.
 	bl_idname = __package__
 
 	slot_link_show_info: bpy.props.BoolProperty(name="Show Info Text", default=True) # type: ignore
 
 	def draw(self, context):
-		self.layout.prop(self, "boolean")
+		self.layout.prop(self, "slot_link_show_info")
 
 
 def register():

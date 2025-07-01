@@ -19,29 +19,25 @@ class SlotLinkEditor(bpy.types.Panel):
 
 	def draw(self, context):
 		if(context.preferences.addons[package_key.package_key].preferences.slot_link_show_info):
-			self.layout.label(text="Preserve the targets of Actions")
-			self.layout.label(text="and Slots, even if unlinked.")
+			self.layout.label(text="Preserve what Actions and Slots are animating.")
 			self.layout.separator(factor=1, type="SPACE")
-			self.layout.label(text="Re-apply them by pressing \"Link\".")
+			self.layout.label(text="Re-apply an Action anytime by pressing `Link`.")
 			self.layout.separator(factor=1, type="SPACE")
 			self.layout.label(text="Prepare the Scene for animating a new")
 			self.layout.label(text="Action by pressing \"Prepare\".")
 			self.layout.separator(factor=1, type="SPACE")
-			self.layout.label(text="Other extensions can use this information.")
-			self.layout.label(text="For example for export.")
-			self.layout.separator(factor=1, type="SPACE")
-			self.layout.label(text="Note: This is a janky workaround,")
-			self.layout.label(text="but without an alternative.")
+			self.layout.label(text="Note: This is a janky workaround.")
 			self.layout.label(text="Good luck!")
 		self.layout.prop(context.preferences.addons[package_key.package_key].preferences, "slot_link_show_info")
 		self.layout.separator(factor=1, type="SPACE")
 
 		row = self.layout.row()
 		row.operator(PrepareLinks.bl_idname)
-		if(not context.active_action.is_action_legacy):
-			row.operator(LinkSlots.bl_idname)
-		else:
+		if(context.active_action.is_action_legacy):
 			self.layout.label(text="Please add a new Slot")
+			return
+		row.operator(LinkSlots.bl_idname)
+		
 		self.layout.separator(factor=2, type="LINE")
 
 		handled_slot_links = []

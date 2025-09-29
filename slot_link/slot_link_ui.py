@@ -48,20 +48,21 @@ class SlotLinkEditor(bpy.types.Panel):
 		return (context.active_action is not None)
 
 	def draw(self, context):
-		self.layout.operator(OpenDocumentation.bl_idname, icon="HELP")
-		self.layout.separator(factor=1, type="LINE")
 
-		row = self.layout.row()
 		if(context.active_action.is_action_legacy):
-			row.operator(PrepareLinks.bl_idname)
 			self.layout.label(text="Please add a new Slot")
+			self.layout.operator(PrepareLinks.bl_idname)
 			return
 		else:
-			row.operator(LinkSlots.bl_idname, icon="DECORATE_LINKED")
+			box = self.layout.box()
+			box = box.box()
+			box = box.box()
+			box.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED")
 
-
-		handled_slot_links = []
-		successes = 0
+		self.layout.separator(factor=1, type="SPACE")
+		row = self.layout.row()
+		row.alignment = "RIGHT"
+		row.operator(OpenDocumentation.bl_idname, icon="HELP")
 
 		prefix_row = self.layout.row()
 		self.layout.template_list(SlotLinkList.bl_idname, "", context.active_action, "slots", context.active_action, "slot_links_active_index")
@@ -75,6 +76,8 @@ class SlotLinkEditor(bpy.types.Panel):
 					set_slot_link_poll_type(bpy.types.Mesh)
 				elif(active_slot.target_id_type in ["MATERIAL"]):
 					set_slot_link_poll_type(bpy.types.Material)
+				elif(active_slot.target_id_type in ["ARMATURE"]):
+					set_slot_link_poll_type(bpy.types.Armature)
 				else:
 					set_slot_link_poll_type(None)
 					
@@ -85,7 +88,8 @@ class SlotLinkEditor(bpy.types.Panel):
 			else:
 				box.operator(AddSlotLink.bl_idname, icon="ADD").index = context.active_action.slot_links_active_index
 
-
+		handled_slot_links = []
+		successes = 0
 		for slot_index, slot in enumerate(context.active_action.slots):
 			slot_link: SlotLink = _find_slot_link(context.active_action, slot.handle)
 			if(slot_link):

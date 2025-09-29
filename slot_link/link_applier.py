@@ -64,6 +64,7 @@ def prepare_all_slots(action: bpy.types.Action):
 			prepare_slot(action, thing.node_tree)
 
 class PrepareLinks(bpy.types.Operator):
+	"""Link this Action to every data-block, remove any other Action from being linked anywhere."""
 	bl_idname = "slot_link.prepare"
 	bl_label = "Prepare"
 	bl_category = "anim"
@@ -130,6 +131,7 @@ def link_slots(action: bpy.types.Action):
 				pass
 
 class LinkSlots(bpy.types.Operator):
+	"""Link this Action and Slots in the selected targets"""
 	bl_idname = "slot_link.link"
 	bl_label = "Link"
 	bl_category = "anim"

@@ -4,7 +4,6 @@ from .misc import OpenDocumentation
 
 from .slot_link import AddSlotLink, RemoveSlotLink, SlotLink, set_slot_link_poll_type
 from .link_applier import LinkSlots, PrepareLinks
-from . import package_key
 
 
 def _find_slot_link(action: bpy.types.Action, slot_handle: int) -> SlotLink:

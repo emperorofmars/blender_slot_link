@@ -13,8 +13,8 @@ def _slot_link_poll(self, blender_object: bpy.types.Object) -> bool:
 
 class SlotLink(bpy.types.PropertyGroup):
 	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1) # type: ignore
-	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", poll=_slot_link_poll) # type: ignore
-	datablock_index: bpy.props.IntProperty(name="Datablock Index", default=0, min=0) # type: ignore
+	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="The data-block this Slot should animate", poll=_slot_link_poll) # type: ignore
+	datablock_index: bpy.props.IntProperty(name="Datablock Index", description="The index of the Material/Nodetree/etc..", default=0, min=0) # type: ignore
 
 
 class AddSlotLink(bpy.types.Operator):

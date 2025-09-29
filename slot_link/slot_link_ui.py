@@ -1,8 +1,38 @@
 import bpy
 
-from .slot_link import AddSlotLink, RemoveSlotLink
+from .misc import OpenDocumentation
+
+from .slot_link import AddSlotLink, RemoveSlotLink, SlotLink, set_slot_link_poll_type
 from .link_applier import LinkSlots, PrepareLinks
 from . import package_key
+
+
+def _find_slot_link(action: bpy.types.Action, slot_handle: int) -> SlotLink:
+	for slot_link in action.slot_links:
+		if(slot_link.slot_handle == slot_handle):
+			return slot_link
+	return None
+
+
+class SlotLinkList(bpy.types.UIList):
+	bl_idname = "COLLECTION_UL_slot_link_list"
+
+	def draw_item(self, context, layout: bpy.types.UILayout, data: bpy.types.Action, item: bpy.types.ActionSlot, icon, active_data, active_propname, index):
+		slot_link: SlotLink = _find_slot_link(context.active_action, item.handle)
+		if(not slot_link or not slot_link.target):
+			layout.alert = True
+
+		split = layout.split(factor=0.07)
+		split.label(text=str(index) + ":")
+
+		row = split.split(factor=0.55)
+		row.label(text=str(index) + ": " + item.name_display + f" ({item.target_id_type})", icon_value = item.target_id_type_icon)
+		if(slot_link and slot_link.target):
+			row.label(text=slot_link.target.name)
+		else:
+			row = row.row()
+			row.label(text="NONE")
+			row.label(icon="ERROR")
 
 
 class SlotLinkEditor(bpy.types.Panel):
@@ -18,46 +48,56 @@ class SlotLinkEditor(bpy.types.Panel):
 		return (context.active_action is not None)
 
 	def draw(self, context):
-		if(context.preferences.addons[package_key.package_key].preferences.slot_link_show_info):
-			self.layout.label(text="Preserve what Actions and Slots are animating.")
-			self.layout.separator(factor=1, type="SPACE")
-			self.layout.label(text="Re-apply an Action anytime by pressing `Link`.")
-			self.layout.separator(factor=1, type="SPACE")
-			self.layout.label(text="Prepare the Scene for animating a new")
-			self.layout.label(text="Action by pressing \"Prepare\".")
-			self.layout.separator(factor=1, type="SPACE")
-			self.layout.label(text="Note: This is a janky workaround.")
-			self.layout.label(text="Good luck!")
-		self.layout.prop(context.preferences.addons[package_key.package_key].preferences, "slot_link_show_info")
-		self.layout.separator(factor=1, type="SPACE")
+		self.layout.operator(OpenDocumentation.bl_idname, icon="HELP")
+		self.layout.separator(factor=1, type="LINE")
 
 		row = self.layout.row()
-		row.operator(PrepareLinks.bl_idname)
 		if(context.active_action.is_action_legacy):
+			row.operator(PrepareLinks.bl_idname)
 			self.layout.label(text="Please add a new Slot")
 			return
-		row.operator(LinkSlots.bl_idname)
-		
-		self.layout.separator(factor=2, type="LINE")
+		else:
+			row.operator(LinkSlots.bl_idname, icon="DECORATE_LINKED")
+
 
 		handled_slot_links = []
+		successes = 0
+
+		prefix_row = self.layout.row()
+		self.layout.template_list(SlotLinkList.bl_idname, "", context.active_action, "slots", context.active_action, "slot_links_active_index")
+
+		if(len(context.active_action.slots) > context.active_action.slot_links_active_index):
+			box = self.layout
+			active_slot = context.active_action.slots[context.active_action.slot_links_active_index]
+			slot_link: SlotLink = _find_slot_link(context.active_action, active_slot.handle)
+			if(slot_link):
+				if(active_slot.target_id_type in ["KEY", "MESH"]):
+					set_slot_link_poll_type(bpy.types.Mesh)
+				elif(active_slot.target_id_type in ["MATERIAL"]):
+					set_slot_link_poll_type(bpy.types.Material)
+				else:
+					set_slot_link_poll_type(None)
+					
+				box.prop_search(slot_link, "target", bpy.data, "objects")
+
+				if(active_slot.target_id_type in ["MATERIAL", "NODETREE"]):
+					box.prop(slot_link, "datablock_index", text="Material Index")
+			else:
+				box.operator(AddSlotLink.bl_idname, icon="ADD").index = context.active_action.slot_links_active_index
+
 
 		for slot_index, slot in enumerate(context.active_action.slots):
-			box = self.layout.box()
-			box.label(text="Slot " + str(slot_index) + " (" + str(slot.target_id_type) + "): " + str(slot.name_display))
+			slot_link: SlotLink = _find_slot_link(context.active_action, slot.handle)
+			if(slot_link):
+				handled_slot_links.append(slot_link)
+				if(slot_link.target):
+					successes += 1
 
-			selected_slot_link = None
-			for slot_link in context.active_action.slot_links:
-				if(slot_link.slot_handle == slot.handle):
-					selected_slot_link = slot_link
-					break
-			if(selected_slot_link):
-				handled_slot_links.append(selected_slot_link)
-				box.prop(selected_slot_link, "target")
-				if(slot.target_id_type in ["MATERIAL", "NODETREE"]):
-					box.prop(selected_slot_link, "datablock_index", text="Material Index")
-			else:
-				box.operator(AddSlotLink.bl_idname).index = slot_index
+		if(successes < len(context.active_action.slots)):
+			prefix_row.alert = True
+			prefix_row.label(text="Not all Slots are Linked!", icon="WARNING_LARGE")
+		else:
+			prefix_row.label(text="Slot Links:")
 
 		orphan_slot_links = []
 		for slot_index, slot_link in enumerate(context.active_action.slot_links):
@@ -72,3 +112,4 @@ class SlotLinkEditor(bpy.types.Panel):
 				box = self.layout.box().row()
 				box.label(text="Slot " + str(slot_index) + " (" + str(slot.target_id_type) + "): " + str(slot.name_display))
 				box.operator(RemoveSlotLink.bl_idname).index = slot_index
+

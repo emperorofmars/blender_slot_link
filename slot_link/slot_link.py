@@ -1,9 +1,19 @@
 import bpy
 
 
+_slot_link_poll_type = None
+def set_slot_link_poll_type(slot_link_poll_type: type):
+	global _slot_link_poll_type
+	_slot_link_poll_type = slot_link_poll_type
+
+def _slot_link_poll(self, blender_object: bpy.types.Object) -> bool:
+	global _slot_link_poll_type
+	return _slot_link_poll_type == None or type(blender_object.data) == _slot_link_poll_type
+
+
 class SlotLink(bpy.types.PropertyGroup):
 	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1) # type: ignore
-	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target") # type: ignore
+	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", poll=_slot_link_poll) # type: ignore
 	datablock_index: bpy.props.IntProperty(name="Datablock Index", default=0, min=0) # type: ignore
 
 
@@ -45,6 +55,7 @@ class RemoveSlotLink(bpy.types.Operator):
 
 def register():
 	bpy.types.Action.slot_links = bpy.props.CollectionProperty(type=SlotLink, name="Slot Links") # type: ignore
+	bpy.types.Action.slot_links_active_index = bpy.props.IntProperty(name="Active Slot Link") # type: ignore
 
 def unregister():
 	if hasattr(bpy.types.Action, "slot_links"):

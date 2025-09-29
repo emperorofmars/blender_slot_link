@@ -3,15 +3,15 @@ schema_version = "1.0.0"
 # Example of manifest file for a Blender extension
 # Change the values according to your extension
 id = "slot_link"
-version = "0.0.6"
+version = "0.0.7"
 name = "Slot Link"
-tagline = "Preserve what Actions and Slots are animating"
+tagline = "Remember what Actions and Slots are animating"
 maintainer = "Mars (https://squirrelbite.com)"
 # Supported types: "add-on", "theme"
 type = "add-on"
 
 # Optional link to documentation, support, source files, etc
-website = "https://github.com/emperorofmars/blender_slot_link"
+website = "https://docs.stfform.at/guide/blender/slot_link.html"
 
 # Optional list defined by Blender and server, see:
 # https://docs.blender.org/manual/en/dev/advanced/extensions/tags.html

@@ -29,6 +29,10 @@ class SlotLinkList(bpy.types.UIList):
 		row.label(text=str(index) + ": " + item.name_display + f" ({item.target_id_type})", icon_value = item.target_id_type_icon)
 		if(slot_link and slot_link.target):
 			row.label(text=slot_link.target.name)
+		elif(not slot_link):
+			row = row.row()
+			row.operator(AddSlotLink.bl_idname, icon="ADD").index = index
+			row.label(icon="WARNING_LARGE")
 		else:
 			row = row.row()
 			row.label(text="NONE")
@@ -48,21 +52,16 @@ class SlotLinkEditor(bpy.types.Panel):
 		return (context.active_action is not None)
 
 	def draw(self, context):
+		row = self.layout.row()
+		row.alignment = "RIGHT"
+		row.operator(OpenDocumentation.bl_idname, icon="HELP")
 
 		if(context.active_action.is_action_legacy):
 			self.layout.label(text="Please add a new Slot")
 			self.layout.operator(PrepareLinks.bl_idname)
 			return
 		else:
-			box = self.layout.box()
-			box = box.box()
-			box = box.box()
-			box.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED")
-
-		self.layout.separator(factor=1, type="SPACE")
-		row = self.layout.row()
-		row.alignment = "RIGHT"
-		row.operator(OpenDocumentation.bl_idname, icon="HELP")
+			self.layout.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED")
 
 		prefix_row = self.layout.row()
 		self.layout.template_list(SlotLinkList.bl_idname, "", context.active_action, "slots", context.active_action, "slot_links_active_index")

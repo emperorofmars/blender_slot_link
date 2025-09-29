@@ -4,9 +4,12 @@ from .slot_link import SlotLink
 
 
 def prepare_slot(action: bpy.types.Action, blender_data_block):
-	if(hasattr(blender_data_block, "animation_data") and blender_data_block.animation_data and blender_data_block.animation_data.action):
-		blender_data_block.animation_data.action = action
-		blender_data_block.animation_data.action_slot = None
+	if(hasattr(blender_data_block, "animation_data")):
+		blender_data_block.animation_data_clear()
+		blender_data_block.animation_data_create()
+		if(blender_data_block.animation_data):
+			blender_data_block.animation_data.action = action
+			blender_data_block.animation_data.action_slot = None
 
 def prepare_all_slots(action: bpy.types.Action):
 	# why u no polymorphism?

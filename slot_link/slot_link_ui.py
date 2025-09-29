@@ -26,14 +26,14 @@ class SlotLinkList(bpy.types.UIList):
 
 		row = split.split(factor=0.55)
 		row.label(text=str(index) + ": " + item.name_display + f" ({item.target_id_type})", icon_value = item.target_id_type_icon)
+		row = row.row()
+		row.alignment = "RIGHT"
 		if(slot_link and slot_link.target):
 			row.label(text=slot_link.target.name)
 		elif(not slot_link):
-			row = row.row()
 			row.operator(AddSlotLink.bl_idname, icon="ADD").index = index
 			row.label(icon="WARNING_LARGE")
 		else:
-			row = row.row()
 			row.label(text="NONE")
 			row.label(icon="ERROR")
 
@@ -78,9 +78,9 @@ class SlotLinkEditor(bpy.types.Panel):
 					set_slot_link_poll_type(bpy.types.Armature)
 				else:
 					set_slot_link_poll_type(None)
-					
-				box.prop_search(slot_link, "target", bpy.data, "objects")
 
+				box.use_property_split = True
+				box.prop_search(slot_link, "target", bpy.data, "objects")
 				if(active_slot.target_id_type in ["MATERIAL", "NODETREE"]):
 					box.prop(slot_link, "datablock_index", text="Material Index")
 			else:
@@ -108,10 +108,10 @@ class SlotLinkEditor(bpy.types.Panel):
 
 		if(len(orphan_slot_links) > 0):
 			self.layout.separator(factor=2, type="LINE")
-			self.layout.label(text="These Links don't belong to any Slot!")
-			self.layout.label(text="Consider deleting them.")
+			self.layout.label(text="These Links don't belong to any Slot!", icon="WARNING_LARGE")
+			self.layout.label(text="Please delete them:")
 			for slot_index, slot_link in orphan_slot_links:
 				box = self.layout.box().row()
 				box.label(text="Slot " + str(slot_index) + " (" + str(slot.target_id_type) + "): " + str(slot.name_display))
-				box.operator(RemoveSlotLink.bl_idname).index = slot_index
+				box.operator(RemoveSlotLink.bl_idname, icon="X").index = slot_index
 

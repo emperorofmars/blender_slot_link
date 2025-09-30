@@ -1,9 +1,9 @@
 import bpy
-
-from .misc import OpenDocumentation
+import decimal
 
 from .slot_link import AddSlotLink, RemoveSlotLink, SlotLink, set_slot_link_poll_type
 from .link_applier import LinkSlots, PrepareLinks
+from .misc import OpenDocumentation
 
 
 def _find_slot_link(action: bpy.types.Action, slot_handle: int) -> SlotLink:
@@ -21,18 +21,11 @@ class SlotLinkList(bpy.types.UIList):
 		if(not slot_link or not slot_link.target):
 			layout.alert = True
 
-		split = layout.split(factor=0.07)
-		split.label(text=str(index) + ":")
-
-		row = split.split(factor=0.55)
-		row.label(text=str(index) + ": " + item.name_display + f" ({item.target_id_type})", icon_value = item.target_id_type_icon)
-		row = row.row()
-		row.alignment = "RIGHT"
+		split = layout.split(factor=0.5)
+		split.label(text=f"{item.name_display}", icon_value = item.target_id_type_icon)
+		row = split.row()
 		if(slot_link and slot_link.target):
 			row.label(text=slot_link.target.name)
-		elif(not slot_link):
-			row.operator(AddSlotLink.bl_idname, icon="ADD").index = index
-			row.label(icon="WARNING_LARGE")
 		else:
 			row.label(text="NONE")
 			row.label(icon="ERROR")

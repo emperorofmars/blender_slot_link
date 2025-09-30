@@ -16,23 +16,21 @@ def _find_slot_link(action: bpy.types.Action, slot_handle: int) -> SlotLink:
 class SlotLinkList(bpy.types.UIList):
 	bl_idname = "COLLECTION_UL_slot_link_list"
 
-	def draw_item(self, context, layout: bpy.types.UILayout, data: bpy.types.Action, item: bpy.types.ActionSlot, icon, active_data, active_propname, index):
+	def draw_item(self, context: bpy.types.Context, layout: bpy.types.UILayout, data: bpy.types.Action, item: bpy.types.ActionSlot, icon, active_data, active_propname, index):
 		slot_link: SlotLink = _find_slot_link(context.active_action, item.handle)
 		if(not slot_link or not slot_link.target):
 			layout.alert = True
 
-		split = layout.split(factor=0.5)
+		split = layout.split(factor=0.45)
 		split.label(text=f"{item.name_display}", icon_value = item.target_id_type_icon)
-		row = split.row()
 		if(slot_link and slot_link.target):
-			row.label(text=slot_link.target.name)
+			split.label(text=slot_link.target.name, icon="RIGHTARROW")
 		else:
-			row.label(text="NONE")
-			row.label(icon="ERROR")
+			split.label(text="NONE", icon="ERROR")
 
 
 class SlotLinkEditor(bpy.types.Panel):
-	"""Link the Slots of an Action to their Targets"""
+	"""Link the Slots of an Action to their targets"""
 	bl_idname = "OBJECT_PT_slot_link_editor"
 	bl_label = "Slot Link Editor"
 	bl_region_type = "UI"
@@ -40,10 +38,13 @@ class SlotLinkEditor(bpy.types.Panel):
 	bl_category = "Action"
 
 	@classmethod
-	def poll(cls, context):
+	def poll(cls, context: bpy.types.Context):
 		return (context.active_action is not None)
+	
+	def draw_header(self, context: bpy.types.Context):
+		self.layout.label(icon="DECORATE_LINKED")
 
-	def draw(self, context):
+	def draw(self, context: bpy.types.Context):
 		row = self.layout.row()
 		row.alignment = "RIGHT"
 		row.operator(OpenDocumentation.bl_idname, icon="HELP")
@@ -56,6 +57,7 @@ class SlotLinkEditor(bpy.types.Panel):
 			self.layout.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED")
 
 		prefix_row = self.layout.row()
+
 		self.layout.template_list(SlotLinkList.bl_idname, "", context.active_action, "slots", context.active_action, "slot_links_active_index")
 
 		if(len(context.active_action.slots) > context.active_action.slot_links_active_index):
@@ -63,10 +65,8 @@ class SlotLinkEditor(bpy.types.Panel):
 			active_slot = context.active_action.slots[context.active_action.slot_links_active_index]
 			slot_link: SlotLink = _find_slot_link(context.active_action, active_slot.handle)
 			if(slot_link):
-				if(active_slot.target_id_type in ["KEY", "MESH"]):
+				if(active_slot.target_id_type in ["KEY", "MESH", "MATERIAL", "NODETREE"]):
 					set_slot_link_poll_type(bpy.types.Mesh)
-				elif(active_slot.target_id_type in ["MATERIAL"]):
-					set_slot_link_poll_type(bpy.types.Material)
 				elif(active_slot.target_id_type in ["ARMATURE"]):
 					set_slot_link_poll_type(bpy.types.Armature)
 				else:
@@ -74,10 +74,21 @@ class SlotLinkEditor(bpy.types.Panel):
 
 				box.use_property_split = True
 				box.prop_search(slot_link, "target", bpy.data, "objects")
-				if(active_slot.target_id_type in ["MATERIAL", "NODETREE"]):
-					box.prop(slot_link, "datablock_index", text="Material Index")
+				if(active_slot.target_id_type in ["MATERIAL", "NODETREE"] and slot_link.target):
+					col = box.column()
+					if(slot_link.datablock_index >= len(slot_link.target.data.materials)):
+						col.alert = True
+
+					col.prop(slot_link, "datablock_index", text="Material Index")
+
+					split = col.split(factor=0.4)
+					_ = split.row()
+					if(slot_link.datablock_index >= len(slot_link.target.data.materials)):
+						split.label(text="Invalid Material Index", icon="WARNING_LARGE")
+					else:
+						split.label(text=slot_link.target.data.materials[slot_link.datablock_index].name, icon="MATERIAL_DATA")
 			else:
-				box.operator(AddSlotLink.bl_idname, icon="ADD").index = context.active_action.slot_links_active_index
+				box.operator(AddSlotLink.bl_idname, icon="ADD").slot_handle = active_slot.handle
 
 		handled_slot_links = []
 		successes = 0

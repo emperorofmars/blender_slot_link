@@ -22,7 +22,6 @@ def prepare_all_data_blocks(action: bpy.types.Action):
 	for thing in bpy.data.curves: prepare_data_block(action, thing)
 	for thing in bpy.data.fonts: prepare_data_block(action, thing)
 	for thing in bpy.data.grease_pencils: prepare_data_block(action, thing)
-	for thing in bpy.data.grease_pencils_v3: prepare_data_block(action, thing)
 	for thing in bpy.data.images: prepare_data_block(action, thing)
 	for thing in bpy.data.lattices: prepare_data_block(action, thing)
 	for thing in bpy.data.libraries: prepare_data_block(action, thing)
@@ -51,8 +50,12 @@ def prepare_all_data_blocks(action: bpy.types.Action):
 	for thing in bpy.data.pointclouds: prepare_data_block(action, thing)
 	for thing in bpy.data.scenes:
 		prepare_data_block(action, thing)
-		if(thing.node_tree):
-			prepare_data_block(action, thing.node_tree)
+		if(bpy.app.version[0] >= 5):
+			if(thing.compositing_node_group):
+				prepare_data_block(action, thing.compositing_node_group)
+		else:
+			if(thing.node_tree):
+				prepare_data_block(action, thing.node_tree)
 	for thing in bpy.data.screens: prepare_data_block(action, thing)
 	for thing in bpy.data.sounds: prepare_data_block(action, thing)
 	for thing in bpy.data.speakers: prepare_data_block(action, thing)

@@ -3,9 +3,9 @@ schema_version = "1.0.0"
 # Example of manifest file for a Blender extension
 # Change the values according to your extension
 id = "slot_link"
-version = "0.0.8"
+version = "0.0.9"
 name = "Slot Link"
-tagline = "Specify what Actions and Slots are animating"
+tagline = "Easily manage projects with multiple separate animations"
 maintainer = "Mars (https://squirrelbite.com)"
 # Supported types: "add-on", "theme"
 type = "add-on"
@@ -78,7 +78,7 @@ paths_exclude_pattern = [
 	"/*.zip",
 	"/.vscode/",
 	"/docs/",
-	"/readme.adoc",
+	"/readme.md",
 	"/.editorconfig",
 	"/.gitignore",
 	"/LICENSE-APACHE2",

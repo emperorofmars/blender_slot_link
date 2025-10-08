@@ -1,7 +1,6 @@
 # Blender Slot Link
-**Specify what Actions and Slots are animating!**
+**Slot Link helps you manage Blender projects with multiple separate animations.**
 
-Slot Link helps you manage Blender projects with multiple separate animations.
 It automates the unlinking & linking of Actions and Slots, without requiring you to remember which goes where.
 
 Re-apply an Action anytime by pressing `Link Slots`.

@@ -101,9 +101,9 @@ class SlotLinkEditor(bpy.types.Panel):
 
 		if(successes < len(context.active_action.slots)):
 			prefix_row.alert = True
-			prefix_row.label(text="Not all Slots are Linked!", icon="WARNING_LARGE")
+			prefix_row.label(text="Not all Slots have Targets!", icon="WARNING_LARGE")
 		else:
-			prefix_row.label(text="Slot Links:")
+			prefix_row.label(text="Slot Targets:")
 
 		orphan_slot_links = []
 		for slot_index, slot_link in enumerate(context.active_action.slot_links):

@@ -102,15 +102,6 @@ def link_slot(action: bpy.types.Action, slot: bpy.types.ActionSlot, slot_link: S
 		case "OBJECT":
 			set_animation_data(target_object, action, slot)
 
-			# If the target object is an armature-instance, also link all objects with meshes that use this armature to this slot. Why can't you be normal Blender?
-			if(type(target_object.data) == bpy.types.Armature):
-				for mesh_instance in bpy.data.objects:
-					if(mesh_instance.data and type(mesh_instance.data) == bpy.types.Mesh):
-						for modifier in mesh_instance.modifiers:
-							if(modifier.type == "ARMATURE" and modifier.object == target_object):
-								set_animation_data(mesh_instance, action, slot)
-								break
-
 		case "MATERIAL":
 			if(target_object.material_slots and len(target_object.material_slots) > slot_link.datablock_index):
 				target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index]

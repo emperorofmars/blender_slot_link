@@ -5,7 +5,7 @@ It automates the unlinking & linking of Actions and Slots, without requiring you
 
 Re-apply an Action anytime by pressing `Link Slots`.
 
-*Requires Blender 4.4 or higher. Not compatible with legacy Actions.*
+*Requires Blender 4.5 or higher. Not compatible with legacy Actions.*
 
 🌰 **[Installation](https://extensions.blender.org/add-ons/slot-link/)** 🌰 **[User Guide](https://docs.stfform.at/guide/blender/slot_link.html)** 🌰
 

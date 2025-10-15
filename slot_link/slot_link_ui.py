@@ -1,13 +1,13 @@
 import bpy
 import decimal
 
-from .slot_link import AddSlotLink, RemoveSlotLink, SlotLink, set_slot_link_poll_type
-from .link_applier import LinkSlots, PrepareLinks
+from .slot_link import AddSlotLink, RemoveSlotLink, SlotLink, UpdateLegacySlotLink, set_slot_link_poll_type
+from .link_applier import LinkSlots, PrepareLinks, UnlinkAction, check_action
 from .misc import OpenDocumentation
 
 
 def _find_slot_link(action: bpy.types.Action, slot_handle: int) -> SlotLink:
-	for slot_link in action.slot_links:
+	for slot_link in action.slot_link.links:
 		if(slot_link.slot_handle == slot_handle):
 			return slot_link
 	return None
@@ -48,32 +48,76 @@ class SlotLinkEditor(bpy.types.Panel):
 		row = self.layout.row()
 		row.alignment = "RIGHT"
 		row.operator(OpenDocumentation.bl_idname, icon="HELP")
+		self.layout.separator(factor=1, type="SPACE")
 
-		if(context.active_action.is_action_legacy):
-			self.layout.label(text="Please add a new Slot")
-			self.layout.operator(PrepareLinks.bl_idname)
+		# From old Slot Link version
+		if(hasattr(context.active_action, "slot_links") and len(context.active_action.slot_links) > 0 and len(context.active_action.slot_link.links) == 0):
+			self.layout.alert = True
+			self.layout.label(text="Please migrate old Slot Link data!", icon="INFO")
+			self.layout.operator(UpdateLegacySlotLink.bl_idname)
 			return
-		else:
-			self.layout.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED")
+
+		# Legacy/newly created Action handling
+		if(context.active_action.is_action_legacy):
+			row = self.layout.row()
+			row.alert = True
+			if(context.active_action.users <= 1): # good enough
+				row.label(text="Please press 'Prepare' first!", icon="WARNING_LARGE")
+			self.layout.operator(PrepareLinks.bl_idname)
+			if(context.active_action.users > 1):
+				self.layout.label(text="Please add a new Slot or animate any property!", icon="INFO")
+			return
+
+		# Reset animation
+		self.layout.use_property_split = True
+		if(not context.active_action.slot_link.reset_animation):
+			self.layout.prop(context.active_action.slot_link, "is_reset_animation")
+		if(not context.active_action.slot_link.is_reset_animation):
+			self.layout.prop(context.active_action.slot_link, "reset_animation")
+			if(context.active_action.slot_link.reset_animation and len(context.active_action.slot_link.reset_animation.slot_link.links) == 0):
+				row = self.layout.row()
+				row.alert = True
+				row.label(text="The Reset Animation has no Targets!", icon="ERROR")
+		self.layout.separator(factor=2, type="LINE")
+
+		# Check whether this Action is linked everywhere state
+		if(not check_action(context.active_action)):
+			row = self.layout.row()
+			row.alert = True
+			row.label(text="Not Linked", icon="WARNING_LARGE")
+
+		# Main link button
+		row = self.layout.row()
+		row_main = row.row()
+		row_main.alignment = "EXPAND"
+		row_main.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED")
+		row_secondary = row.row()
+		row_secondary.alignment = "RIGHT"
+		row_secondary.operator(UnlinkAction.bl_idname, icon="WARNING_LARGE")
+
 
 		prefix_row = self.layout.row()
 
-		self.layout.template_list(SlotLinkList.bl_idname, "", context.active_action, "slots", context.active_action, "slot_links_active_index")
+		self.layout.template_list(SlotLinkList.bl_idname, "", context.active_action, "slots", context.active_action.slot_link, "active_index")
 
-		if(len(context.active_action.slots) > context.active_action.slot_links_active_index):
+		if(len(context.active_action.slots) > context.active_action.slot_link.active_index):
 			box = self.layout
-			active_slot = context.active_action.slots[context.active_action.slot_links_active_index]
+			active_slot = context.active_action.slots[context.active_action.slot_link.active_index]
 			slot_link: SlotLink = _find_slot_link(context.active_action, active_slot.handle)
 			if(slot_link):
 				if(active_slot.target_id_type in ["KEY", "MESH", "MATERIAL", "NODETREE"]):
 					set_slot_link_poll_type(bpy.types.Mesh)
 				elif(active_slot.target_id_type in ["ARMATURE"]):
 					set_slot_link_poll_type(bpy.types.Armature)
+				elif(active_slot.target_id_type in ["CAMERA"]):
+					set_slot_link_poll_type(bpy.types.Camera)
+				elif(active_slot.target_id_type in ["LIGHT"]):
+					set_slot_link_poll_type(bpy.types.Light)
 				else:
 					set_slot_link_poll_type(None)
 
 				box.use_property_split = True
-				box.prop_search(slot_link, "target", bpy.data, "objects")
+				box.prop_search(slot_link, "target", bpy.data, "objects", icon="RIGHTARROW")
 				if(active_slot.target_id_type in ["MATERIAL", "NODETREE"] and slot_link.target):
 					col = box.column()
 					if(slot_link.datablock_index >= len(slot_link.target.data.materials)):
@@ -102,11 +146,9 @@ class SlotLinkEditor(bpy.types.Panel):
 		if(successes < len(context.active_action.slots)):
 			prefix_row.alert = True
 			prefix_row.label(text="Not all Slots have Targets!", icon="WARNING_LARGE")
-		else:
-			prefix_row.label(text="Slot Targets:")
 
 		orphan_slot_links = []
-		for slot_index, slot_link in enumerate(context.active_action.slot_links):
+		for slot_index, slot_link in enumerate(context.active_action.slot_link.links):
 			if(slot_link not in handled_slot_links):
 				orphan_slot_links.append((slot_index, slot_link))
 
@@ -118,4 +160,3 @@ class SlotLinkEditor(bpy.types.Panel):
 				box = self.layout.box().row()
 				box.label(text="Slot " + str(slot_index) + " (" + str(slot.target_id_type) + "): " + str(slot.name_display))
 				box.operator(RemoveSlotLink.bl_idname, icon="X").index = slot_index
-

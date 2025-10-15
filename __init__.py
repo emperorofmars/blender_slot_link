@@ -20,8 +20,8 @@ def slot_link_docs():
 	manual_map = (
 		("bpy.ops.slot_link.*", ""),
 		("bpy.types.slotlink.*", ""),
-		("bpy.types.action.slot_links.*", ""),
-		("bpy.types.action.slot_links_active_index", ""),
+		("bpy.types.actionslotlink.*", ""),
+		("bpy.types.action.slot_link.*", ""),
 	)
 	return "https://docs.stfform.at/guide/blender/slot_link.html", manual_map
 

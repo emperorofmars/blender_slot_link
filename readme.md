@@ -7,7 +7,7 @@ Re-apply an Action anytime by pressing `Link Slots`.
 
 *Requires Blender 4.5 or higher. Not compatible with legacy Actions.*
 
-🌰 **[Installation](https://extensions.blender.org/add-ons/slot-link/)** 🌰 **[User Guide](https://docs.stfform.at/guide/blender/slot_link.html)** 🌰
+🌰 **[Installation](https://extensions.blender.org/add-ons/slot-link/)** 🌰 **[User Guide](https://docs.stfform.at/guide/blender/slot_link.html)** 🌰 **[Report Issues](https://codeberg.org/emperorofmars/blender_slot_link/issues)**
 
 ![Screenshot of the Slot Link editor. This GUI allows specifying the targeted Objects of the Slots of a Blender Action.](docs/img/slot_link_editor.png)
 

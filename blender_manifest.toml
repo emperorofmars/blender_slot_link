@@ -83,4 +83,5 @@ paths_exclude_pattern = [
 	"/.gitignore",
 	"/LICENSE-APACHE2",
 	"/LICENSE-MIT",
+	"/packages",
 ]

@@ -147,6 +147,8 @@ class LinkSlots(bpy.types.Operator):
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
+	use_reset: bpy.props.BoolProperty(name="Use Reset", default=True) # type: ignore
+
 	@classmethod
 	def poll(cls, context: bpy.types.Context):
 		return context.active_action is not None
@@ -154,7 +156,7 @@ class LinkSlots(bpy.types.Operator):
 	def execute(self, context: bpy.types.Context):
 		# Link the reset animation first if applicable
 		action = context.active_action
-		if(not action.slot_link.is_reset_animation and action.slot_link.reset_animation):
+		if(self.use_reset and not action.slot_link.is_reset_animation and action.slot_link.reset_animation):
 			prepare_all_data_blocks(action.slot_link.reset_animation)
 			link_slots(action.slot_link.reset_animation)
 			context.scene.frame_set(1)
@@ -162,4 +164,3 @@ class LinkSlots(bpy.types.Operator):
 		prepare_all_data_blocks(action)
 		link_slots(action)
 		return {"FINISHED"}
-

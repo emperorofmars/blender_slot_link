@@ -3,7 +3,7 @@ schema_version = "1.0.0"
 # Example of manifest file for a Blender extension
 # Change the values according to your extension
 id = "slot_link"
-version = "0.0.10"
+version = "0.0.11"
 name = "Slot Link"
 tagline = "Easily manage projects with multiple separate animations"
 maintainer = "Mars (https://squirrelbite.com)"

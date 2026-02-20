@@ -40,7 +40,7 @@ class SlotLinkEditor(bpy.types.Panel):
 	@classmethod
 	def poll(cls, context: bpy.types.Context):
 		return (context.active_action is not None)
-	
+
 	def draw_header(self, context: bpy.types.Context):
 		self.layout.label(icon="DECORATE_LINKED")
 
@@ -48,7 +48,6 @@ class SlotLinkEditor(bpy.types.Panel):
 		row = self.layout.row()
 		row.alignment = "RIGHT"
 		row.operator(OpenDocumentation.bl_idname, icon="HELP")
-		self.layout.separator(factor=1, type="SPACE")
 
 		# From old Slot Link version
 		if(hasattr(context.active_action, "slot_links") and len(context.active_action.slot_links) > 0 and len(context.active_action.slot_link.links) == 0):
@@ -91,9 +90,10 @@ class SlotLinkEditor(bpy.types.Panel):
 		row_main = row.row()
 		row_main.alignment = "EXPAND"
 		row_main.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED")
-		row_secondary = row.row()
-		row_secondary.alignment = "RIGHT"
-		row_secondary.operator(UnlinkAction.bl_idname, icon="WARNING_LARGE")
+		if(context.active_action.slot_link.reset_animation):
+			row_secondary = row.row()
+			row_secondary.alignment = "RIGHT"
+			row_secondary.operator(LinkSlots.bl_idname, text="Link Without Reset").use_reset = False
 
 
 		prefix_row = self.layout.row()

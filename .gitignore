@@ -1,4 +1,7 @@
-**/*.vscode
+.vscode/*
+!.vscode/extensions.json
+
+.venv
 
 *.blend?
 *.zip

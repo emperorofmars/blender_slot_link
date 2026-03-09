@@ -1,0 +1,9 @@
+{
+	"recommendations": [
+		"ms-python.python",
+		"editorconfig.editorconfig",
+		"streetsidesoftware.code-spell-checker",
+		"jacqueslucke.blender-development",
+		"tamasfe.even-better-toml",
+	]
+}

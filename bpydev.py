@@ -15,14 +15,17 @@ Some premade configurations for editors like VSCode or Zed are in this repositor
 Be sure to add this script and `bpydev.toml` to `paths_exclude_pattern` in your `blender_manifest.toml`
 """
 
-from collections.abc import Sequence
-from dataclasses import dataclass
-
 BLENDER_BINARIES = ("/usr/bin/blender",) # todo platform switch
 BLENDER_DEFAULT = "latest"
 EXTENSIONS_REPOSITORY = "local_development"
 PORT_UDP = 25398
 PORT_DEBUGPY = 25399
+
+
+import io
+from collections.abc import Sequence
+from dataclasses import dataclass
+
 
 @dataclass
 class BpydevConfig:
@@ -370,6 +373,34 @@ def setup(config: BpydevConfig) -> tuple[str, str] | None:
 		raise Exception(f"Failed to install {extension_id}!")
 
 
+def build_blender_package(blender_manifest: str, package_buffer: io.BytesIO):
+	"""
+	Builds a Blender extension .zip package from blender_manifest.toml.
+
+	Easy to use from the commandline, and more importantly, easily usable in a git-ops action.
+	"""
+	import tomllib
+	manifest = tomllib.loads(blender_manifest)
+	path_exclude_patterns: list[str] = manifest.get("build", {}).get("paths_exclude_pattern", [])
+	path_exclude_patterns.append("__pycache__/")
+	path_exclude_patterns.append("/.git/")
+	path_exclude_patterns.append("/*.zip")
+
+	from pathspec import GitIgnoreSpec
+	spec = GitIgnoreSpec.from_lines(path_exclude_patterns)
+	files_to_add = set(spec.match_tree_files(".", negate=True))
+
+	import zipfile
+	with zipfile.ZipFile(package_buffer, mode="w") as package:
+		for file in files_to_add:
+			package.write(file)
+
+def package_name_from_manifest(blender_manifest: str) -> str:
+	import tomllib
+	manifest = tomllib.loads(blender_manifest)
+	return manifest.get("id", "error") + "-" + manifest.get("version", "") + ".zip"
+
+
 if(__name__ == "__main__"):
 	import argparse
 	parser = argparse.ArgumentParser(description="Blender extension development tooling")
@@ -380,6 +411,7 @@ if(__name__ == "__main__"):
 	list_parser = subparsers.add_parser("list", aliases=["ll"], usage="list", help="List available Blender installations.")
 	setup_parser = subparsers.add_parser("setup", aliases=["s"], usage="setup .", help="Install an extension for development in Blender.")
 	launch_parser = subparsers.add_parser("launch", aliases=["l"], usage="launch .", help="Launch Blender with an extension for development and listen for a debugpy client.", description="Launch Blender with an extension for development and listen for a debugpy client.")
+	package_parser = subparsers.add_parser("package", aliases=["p"], usage="package .", help="Create a Blender extension .zip from its manifest")
 
 	def add_subparser_args(parser: argparse.ArgumentParser):
 		parser.add_argument("target_directory", nargs="?", type=str, help="Install the specified directory as an extension in Blender. (The directory must contain a 'blender_manifest.toml')", default=".")
@@ -392,6 +424,9 @@ if(__name__ == "__main__"):
 
 	init_config_parser.add_argument("-o", "--override", action="store_true", help="Override an already existing config")
 	list_parser.add_argument("-b", "--blender-binary", type=str, help="Select the target Blender executable (e.g. '/usr/bin/blender')")
+
+	package_parser.add_argument("target_directory", nargs="?", type=str, help="Install the specified directory as an extension in Blender. (The directory must contain a 'blender_manifest.toml')", default=".")
+	package_parser.add_argument("-o", "--output-dir", help="Directory where to place the .zip", default=".")
 
 	args = parser.parse_args()
 
@@ -413,6 +448,12 @@ if(__name__ == "__main__"):
 				start_blender_with_extension(config, ret[0], ret[1])
 			else:
 				exit(1)
+		case "package" | "p":
+			import os
+			with open(os.path.join(config.target_directory, "blender_manifest.toml"), "r") as blender_manifest:
+				manifest = blender_manifest.read()
+				with open(os.path.join(args.output_dir, package_name_from_manifest(manifest)), "wb") as package:
+					build_blender_package(manifest, package) # pyright: ignore[reportArgumentType]
 		case _:
 			print("Invalid Command")
 			parser.print_usage()

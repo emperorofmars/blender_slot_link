@@ -1,5 +1,15 @@
+
 .vscode/*
-!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+.zed/*
+!.zed/tasks.json
+!.zed/debug.json
+
+bpydev.toml
+bpydev.toml.backup
+
 
 .venv
 

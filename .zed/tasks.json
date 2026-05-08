@@ -1,0 +1,7 @@
+[
+	{
+		"label": "Launch Blender with development extension",
+		"command": "python bpydev.py l",
+		"allow_concurrent_runs": false
+	}
+]

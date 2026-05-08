@@ -1,0 +1,36 @@
+{
+	"configurations": [
+		{
+			"name": "Debug Blender",
+			"type": "debugpy",
+			"request": "launch",
+			"program": "bpydev.py",
+			"args": "l",
+			"serverReadyAction":{
+				"pattern": "Debugpy is listening on port ([0-9]+)",
+				"action": "startDebugging",
+				"name": "Python Debugger: Attach to Blender",
+				"killOnServerStop": true
+			},
+			"presentation": {
+				"hidden": false,
+				"group": "",
+				"order": 1
+			}
+		},
+		{
+			"name": "Python Debugger: Attach to Blender",
+			"type": "debugpy",
+			"request": "attach",
+			"connect": {
+				"host": "localhost",
+				"port": 25399
+			},
+			"presentation": {
+				"hidden": false,
+				"group": "",
+				"order": 2
+			}
+		}
+	]
+}

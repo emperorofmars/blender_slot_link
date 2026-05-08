@@ -1,0 +1,3 @@
+watchdog>=6.0.0
+fake-bpy-module;
+numpy>=2.4.4

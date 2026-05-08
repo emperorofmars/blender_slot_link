@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Launch Blender with development extension",
+			"type": "shell",
+			"command": "${command:python.interpreterPath} -m venv .venv && ${command:python.interpreterPath} bpydev.py l",
+			"group": "build",
+			"presentation": {
+				"reveal": "always",
+				"panel": "new"
+			}
+		}
+	]
+}

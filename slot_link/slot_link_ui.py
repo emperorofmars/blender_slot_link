@@ -1,23 +1,23 @@
 import bpy
-import decimal
 
 from .slot_link import AddSlotLink, RemoveSlotLink, SlotLink, UpdateLegacySlotLink, set_slot_link_poll_type
-from .link_applier import LinkSlots, PrepareLinks, UnlinkAction, check_action
+from .link_applier import LinkSlots, PrepareLinks, check_action
 from .misc import OpenDocumentation
 
 
-def _find_slot_link(action: bpy.types.Action, slot_handle: int) -> SlotLink:
-	for slot_link in action.slot_link.links:
-		if(slot_link.slot_handle == slot_handle):
-			return slot_link
+def _find_slot_link(action: bpy.types.Action | None, slot_handle: int) -> SlotLink | None:
+	if(action):
+		for slot_link in action.slot_link.links:
+			if(slot_link.slot_handle == slot_handle):
+				return slot_link
 	return None
 
 
 class SlotLinkList(bpy.types.UIList):
 	bl_idname = "COLLECTION_UL_slot_link_list"
 
-	def draw_item(self, context: bpy.types.Context, layout: bpy.types.UILayout, data: bpy.types.Action, item: bpy.types.ActionSlot, icon, active_data, active_propname, index):
-		slot_link: SlotLink = _find_slot_link(context.active_action, item.handle)
+	def draw_item(self, context: bpy.types.Context, layout: bpy.types.UILayout, data: bpy.types.Action, item: bpy.types.ActionSlot, icon, active_data, active_propname, index):  # pyright: ignore[reportIncompatibleMethodOverride]
+		slot_link = _find_slot_link(context.active_action, item.handle)
 		if(not slot_link or not slot_link.target):
 			layout.alert = True
 
@@ -80,7 +80,7 @@ class SlotLinkEditor(bpy.types.Panel):
 		self.layout.separator(factor=2, type="LINE")
 
 		# Check whether this Action is linked everywhere state
-		if(not check_action(context.active_action)):
+		if(not check_action(context.active_action)):  # pyright: ignore[reportArgumentType]
 			row = self.layout.row()
 			row.alert = True
 			row.label(text="Not Linked", icon="WARNING_LARGE")
@@ -103,7 +103,7 @@ class SlotLinkEditor(bpy.types.Panel):
 		if(len(context.active_action.slots) > context.active_action.slot_link.active_index):
 			box = self.layout
 			active_slot = context.active_action.slots[context.active_action.slot_link.active_index]
-			slot_link: SlotLink = _find_slot_link(context.active_action, active_slot.handle)
+			slot_link = _find_slot_link(context.active_action, active_slot.handle)  # pyright: ignore[reportAssignmentType]
 			if(slot_link):
 				if(active_slot.target_id_type in ["KEY", "MESH", "MATERIAL", "NODETREE"]):
 					set_slot_link_poll_type(bpy.types.Mesh)
@@ -137,7 +137,7 @@ class SlotLinkEditor(bpy.types.Panel):
 		handled_slot_links = []
 		successes = 0
 		for slot_index, slot in enumerate(context.active_action.slots):
-			slot_link: SlotLink = _find_slot_link(context.active_action, slot.handle)
+			slot_link = _find_slot_link(context.active_action, slot.handle)
 			if(slot_link):
 				handled_slot_links.append(slot_link)
 				if(slot_link.target):
@@ -158,5 +158,5 @@ class SlotLinkEditor(bpy.types.Panel):
 			self.layout.label(text="Please delete them:")
 			for slot_index, slot_link in orphan_slot_links:
 				box = self.layout.box().row()
-				box.label(text="Slot " + str(slot_index) + " (" + str(slot.target_id_type) + "): " + str(slot.name_display))
+				box.label(text="Slot " + str(slot_index) + " (" + str(slot_link.target_id_type) + "): " + str(slot_link.name_display))
 				box.operator(RemoveSlotLink.bl_idname, icon="X").index = slot_index

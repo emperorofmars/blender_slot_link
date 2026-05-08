@@ -12,7 +12,7 @@ _blender_data_subkeys = ["node_tree", "shape_keys", "compositing_node_group"]
 Check
 """
 
-def check_action_in_data_block(action: bpy.types.Action, blender_data_block: bpy.types.ID) -> bool:
+def check_action_in_data_block(action: bpy.types.Action | None, blender_data_block: bpy.types.ID) -> bool:
 	if(hasattr(blender_data_block, "animation_data")):
 		if(not blender_data_block.animation_data or blender_data_block.animation_data.action != action):
 			# todo check slots as well if present
@@ -67,7 +67,7 @@ class PrepareLinks(bpy.types.Operator):
 	def poll(cls, context: bpy.types.Context):
 		return context.active_action is not None
 
-	def execute(self, context: bpy.types.Context):
+	def execute(self, context: bpy.types.Context) -> set:
 		prepare_all_data_blocks(context.active_action)
 		return {"FINISHED"}
 
@@ -78,7 +78,7 @@ class UnlinkAction(bpy.types.Operator):
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
-	def execute(self, context: bpy.types.Context):
+	def execute(self, context: bpy.types.Context) -> set:
 		prepare_all_data_blocks(None)
 		return {"FINISHED"}
 
@@ -104,31 +104,37 @@ def link_slot(action: bpy.types.Action, slot: bpy.types.ActionSlot, slot_link: S
 
 		case "MATERIAL":
 			if(target_object.material_slots and len(target_object.material_slots) > slot_link.datablock_index):
-				target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index]
+				target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index]  # pyright: ignore[reportRedeclaration]
 				if(target_material_slot.material):
 					set_animation_data(target_material_slot.material, action, slot)
+					return
 
 		case "NODETREE":
 			if(target_object.material_slots and len(target_object.material_slots) > slot_link.datablock_index):
 				target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index]
 				if(target_material_slot.material and target_material_slot.material.node_tree):
 					set_animation_data(target_material_slot.material.node_tree, action, slot)
+					return
 
 		case "KEY":
-			if(target_object.data and type(target_object.data) == bpy.types.Mesh and target_object.data.shape_keys):
+			if(target_object.data and type(target_object.data) is bpy.types.Mesh and target_object.data.shape_keys):
 				set_animation_data(target_object.data.shape_keys, action, slot)
+				return
 
 		case "ARMATURE":
-			if(target_object.data and type(target_object.data) == bpy.types.Armature):
+			if(target_object.data and type(target_object.data) is bpy.types.Armature):
 				set_animation_data(target_object.data, action, slot)
+				return
 
 		case "CAMERA":
-			if(target_object.data and type(target_object.data) == bpy.types.Camera):
+			if(target_object.data and type(target_object.data) is bpy.types.Camera):
 				set_animation_data(target_object.data, action, slot)
+				return
 
 		case "LIGHT":
 			if(target_object.data and isinstance(target_object.data, bpy.types.Light)):
 				set_animation_data(target_object.data, action, slot)
+				return
 
 
 def link_slots(action: bpy.types.Action):
@@ -153,9 +159,9 @@ class LinkSlots(bpy.types.Operator):
 	def poll(cls, context: bpy.types.Context):
 		return context.active_action is not None
 
-	def execute(self, context: bpy.types.Context):
+	def execute(self, context: bpy.types.Context) -> set:
 		# Link the reset animation first if applicable
-		action = context.active_action
+		action: bpy.types.Action = context.active_action  # pyright: ignore[reportAssignmentType]
 		if(self.use_reset and not action.slot_link.is_reset_animation and action.slot_link.reset_animation):
 			prepare_all_data_blocks(action.slot_link.reset_animation)
 			link_slots(action.slot_link.reset_animation)

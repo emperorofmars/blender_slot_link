@@ -5,13 +5,13 @@ import bpy
 # I.e. when a Slot is of the type "KEY", show only Objects which instantiate a Mesh.
 _slot_link_poll_type = None
 
-def set_slot_link_poll_type(slot_link_poll_type: type):
+def set_slot_link_poll_type(slot_link_poll_type: type | None):
 	global _slot_link_poll_type
 	_slot_link_poll_type = slot_link_poll_type
 
 def _slot_link_poll(self, blender_object: bpy.types.Object) -> bool:
 	global _slot_link_poll_type
-	return _slot_link_poll_type == None or isinstance(blender_object.data, _slot_link_poll_type)
+	return _slot_link_poll_type is None or isinstance(blender_object.data, _slot_link_poll_type)
 
 
 class SlotLink(bpy.types.PropertyGroup):
@@ -40,7 +40,7 @@ class AddSlotLink(bpy.types.Operator):
 	def poll(cls, context: bpy.types.Context):
 		return context.active_action is not None
 
-	def execute(self, context: bpy.types.Context):
+	def execute(self, context: bpy.types.Context) -> set:
 		for link in context.active_action.slot_link.links:
 			if(link.slot_handle == self.slot_handle):
 				return {"CANCELLED"}
@@ -62,7 +62,7 @@ class RemoveSlotLink(bpy.types.Operator):
 	def poll(cls, context: bpy.types.Context):
 		return context.active_action is not None and len(context.active_action.slot_link.links) > 0
 
-	def execute(self, context: bpy.types.Context):
+	def execute(self, context: bpy.types.Context) -> set:
 		context.active_action.slot_link.links.remove(self.index)
 		return {"FINISHED"}
 
@@ -78,7 +78,7 @@ class UpdateLegacySlotLink(bpy.types.Operator):
 	def poll(cls, context: bpy.types.Context):
 		return context.active_action is not None and hasattr(context.active_action, "slot_links") and len(context.active_action.slot_links) > 0 and len(context.active_action.slot_link.links) == 0
 
-	def execute(self, context: bpy.types.Context):
+	def execute(self, context: bpy.types.Context) -> set:
 		for old_link in context.active_action.slot_links:
 			new_link: SlotLink = context.active_action.slot_link.links.add()
 			new_link.slot_handle = old_link.slot_handle

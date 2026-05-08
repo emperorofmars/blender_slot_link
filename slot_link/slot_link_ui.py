@@ -158,5 +158,5 @@ class SlotLinkEditor(bpy.types.Panel):
 			self.layout.label(text="Please delete them:")
 			for slot_index, slot_link in orphan_slot_links:
 				box = self.layout.box().row()
-				box.label(text="Slot " + str(slot_index) + " (" + str(slot_link.target_id_type) + "): " + str(slot_link.name_display))
+				box.label(text="Slot " + str(slot_index))
 				box.operator(RemoveSlotLink.bl_idname, icon="X").index = slot_index

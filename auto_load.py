@@ -17,6 +17,14 @@ modules = None
 ordered_classes = None
 
 
+ignore_modules = [
+	"bpydev",
+	"build_extension",
+	"testsuite",
+	"stf_blender_module_template",
+]
+
+
 def init():
 	global modules
 	global ordered_classes
@@ -54,11 +62,13 @@ def unregister():
 def get_all_submodules(directory):
 	return list(iter_submodules(directory, __package__))
 
-
 def iter_submodules(path, package_name):
 	for name in sorted(iter_submodule_names(path)):
-		yield importlib.import_module("." + name, package_name)
-
+		for ignore in ignore_modules:
+			if(name.startswith(ignore)):
+				break
+		else:
+			yield importlib.import_module("." + name, package_name)
 
 def iter_submodule_names(path, root=""):
 	for _, module_name, is_package in pkgutil.iter_modules([str(path)]):

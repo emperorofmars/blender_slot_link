@@ -1,0 +1,32 @@
+
+[tool.pyright]
+include = [
+	"."
+]
+exclude = [
+	".venv",
+	".vscode",
+	"packages",
+	"**/__pycache__",
+]
+ignore = [
+	"auto_load.py"
+]
+defineConstant = { DEBUG = true }
+pythonVersion = "3.13"
+
+useLibraryCodeForTypes = true
+typeCheckingMode = "standard"
+reportInvalidTypeForm = "none"
+reportAttributeAccessIssue = "information"
+reportOptionalMemberAccess = "information"
+
+
+[tool.ruff]
+ignore = [
+	"E701",
+	"E401",
+]
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "tab"

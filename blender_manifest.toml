@@ -86,8 +86,9 @@ paths_exclude_pattern = [
 	"/LICENSE-APACHE2",
 	"/LICENSE-MIT",
 	"/packages",
-	"bpydev.py",
-	"bpydev.toml",
-	"pyproject.toml",
-	"requirements.txt",
+	"/build_extension.py",
+	"/bpydev.py",
+	"/bpydev.toml",
+	"/pyproject.toml",
+	"/requirements.txt",
 ]

@@ -13,17 +13,22 @@ Re-apply an Action anytime by pressing `Link Slots`.
 
 Please open issues for any bugs or misbehavior you notice. Feel free to open issues for feature requests.
 
+## Development Setup
+* Have an up to date version of Blender installed.
+* Either:
+	* Use `bpydev.py` included in this repository.
+	* Use VSCode with the [recommended extensions](./.vscode/extensions.json).\
+		The most important one is [Blender VS Code](https://github.com/JacquesLucke/blender_vscode).
+* Create a Python 3.13 venv in the repo directory.
+* Inside the venv run:
+	``` sh
+	pip install -r requirements.txt
+	```
+
 ## Contributing
-Human made contributions via pull-requests are welcome.
+Human made contributions via pull-requests are very welcome.
 
-### Guidelines
-* Any form of LLM contribution is prohibited, this also includes issues and PRs.
-* Please open an issue first for larger changes.
-
-### Development
-* Use VSCode with the [recommended extensions](./.vscode/extensions.json).\
-	The most important one is [Blender VS Code](https://github.com/JacquesLucke/blender_vscode).
-* Create a Python 3.11 venv in the repo directory. Inside use pip to install [fake-bpy-module](https://pypi.org/project/fake-bpy-module-latest/).
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines and development environment setup.
 
 ## License
 All source-code in this repository, except when noted in individual files and/or directories, is licensed under either:

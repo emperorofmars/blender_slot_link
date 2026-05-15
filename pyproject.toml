@@ -6,6 +6,8 @@ include = [
 exclude = [
 	".venv",
 	".vscode",
+	".zed",
+	"docs",
 	"packages",
 	"**/__pycache__",
 ]

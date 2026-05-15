@@ -1,2 +1,2 @@
 
-package_key = None
+package_key: str

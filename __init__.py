@@ -10,7 +10,7 @@ auto_load.init()
 
 
 class SlotLinkAddonPreferences(bpy.types.AddonPreferences):
-	bl_idname = __package__
+	bl_idname = package_key.package_key  # pyright: ignore[reportAssignmentType]
 
 	def draw(self, context):
 		self.layout.operator(OpenDocumentation.bl_idname, icon="HELP")

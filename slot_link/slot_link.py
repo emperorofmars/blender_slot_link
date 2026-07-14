@@ -17,8 +17,11 @@ def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
 	else:
 		return False
 
+	#import re
+
 	match slot.target_id_type:
 		case "OBJECT":
+			# plz no
 			for layer in action.layers:
 				for strip in layer.strips:  # pyright: ignore[reportAssignmentType]
 					if(strip.type == "KEYFRAME"):
@@ -26,8 +29,12 @@ def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
 						for channelbag in strip.channelbags:
 							if(channelbag.slot_handle == slot.handle):
 								for fcurve in channelbag.fcurves:
-									if(fcurve.data_path.startswith("pose.") and type(target_object.data) is not bpy.types.Armature):
-										return False
+									if(fcurve.data_path.startswith("pose.")):
+										if(type(target_object.data) is not bpy.types.Armature):
+											return False
+										#if(match := re.search(r"^pose.bones\[\"(?P<bone_name>[\w. -:,]+)\"\]", fcurve.data_path)): # Too far? What if user deletes a bone from an animated armature? Calculate confidence based on the percentage of matched bones and use that as a cutoff?
+										#	if(match.groupdict()["bone_name"] not in target_object.data.bones):
+										#		return False
 			return True
 		case "MATERIAL":
 			if(target_object.material_slots and len(target_object.material_slots) > 0):

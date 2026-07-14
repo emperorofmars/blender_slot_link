@@ -26,6 +26,12 @@ def _draw_spacer(self, context: bpy.types.Context):
 		return
 	self.layout.separator(factor=12)
 
+def _draw_spacer_mini(self, context: bpy.types.Context):
+	"""Draw a Spacer in the Dopesheet header so there is a gab between the menus and the slot link buttons"""
+	if(not context or not hasattr(context, "active_action") or not context.active_action):
+		return
+	self.layout.separator(factor=2)
+
 """
 class SlotLinkEditor(bpy.types.Panel):
 	""Link the Slots of an Action to their targets""
@@ -49,14 +55,16 @@ class SlotLinkEditor(bpy.types.Panel):
 
 def register():
 	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_spacer)
-	bpy.types.DOPESHEET_MT_editor_menus.append(draw_link_messages)
 	bpy.types.DOPESHEET_MT_editor_menus.append(draw_link_buttons)
+	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_spacer_mini)
+	bpy.types.DOPESHEET_MT_editor_menus.append(draw_link_messages)
 	bpy.types.DOPESHEET_PT_action.append(_draw_action_slot_link)
 	bpy.types.DOPESHEET_PT_action_slot.append(_draw_slot_link)
 
 def unregister():
 	bpy.types.DOPESHEET_PT_action_slot.remove(_draw_slot_link)
 	bpy.types.DOPESHEET_PT_action.remove(_draw_action_slot_link)
-	bpy.types.DOPESHEET_MT_editor_menus.remove(draw_link_buttons)
 	bpy.types.DOPESHEET_MT_editor_menus.remove(draw_link_messages)
+	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_spacer_mini)
+	bpy.types.DOPESHEET_MT_editor_menus.remove(draw_link_buttons)
 	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_spacer)

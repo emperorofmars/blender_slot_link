@@ -34,12 +34,12 @@ def _draw_spacer_mini(self, context: bpy.types.Context):
 	self.layout.separator(factor=2)
 
 def _draw_link_buttons(self, context: bpy.types.Context):
-	if(context.preferences.addons[package_key].preferences.hide_dopesheet_header_ui):
+	if(not context or not hasattr(context, "active_action") or not context.active_action or context.preferences.addons[package_key].preferences.hide_dopesheet_header_ui):
 		return
 	draw_link_buttons(self, context)
 
 def _draw_link_messages(self, context: bpy.types.Context):
-	if(context.preferences.addons[package_key].preferences.hide_dopesheet_header_ui):
+	if(not context or not hasattr(context, "active_action") or not context.active_action or context.preferences.addons[package_key].preferences.hide_dopesheet_header_ui):
 		return
 	draw_link_messages(self, context)
 

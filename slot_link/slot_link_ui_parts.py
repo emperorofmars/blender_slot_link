@@ -32,8 +32,6 @@ class SlotLinkList(bpy.types.UIList):
 
 
 def draw_link_messages(self, context: bpy.types.Context) -> bool:
-	if(not context or not hasattr(context, "active_action") or not context.active_action):
-		return True
 	layout: bpy.types.UILayout = self.layout
 	action = context.active_action
 
@@ -61,7 +59,7 @@ def draw_link_messages(self, context: bpy.types.Context) -> bool:
 		return True
 
 	# Check whether this Action is linked everywhere state
-	if(not check_action(action)):
+	if(not action or not check_action(action)):
 		row = layout.row()
 		row.alert = True
 		row.label(text="Not Linked!", icon="WARNING_LARGE")
@@ -71,8 +69,6 @@ def draw_link_messages(self, context: bpy.types.Context) -> bool:
 
 def draw_reset_animation_selector(self, context: bpy.types.Context):
 	"""Mark the Action as a reset animation, or select a reset animation"""
-	if(not context or not hasattr(context, "active_action") or not context.active_action):
-		return
 	layout: bpy.types.UILayout = self.layout.column(align=True)
 
 	# Reset animation
@@ -88,8 +84,6 @@ def draw_reset_animation_selector(self, context: bpy.types.Context):
 
 def draw_link_buttons(self, context: bpy.types.Context):
 	"""The main 'Link Slots' buttons"""
-	if(not context or not hasattr(context, "active_action") or not context.active_action):
-		return
 	layout: bpy.types.UILayout = self.layout
 
 	# Prepare legacy/newly created Action
@@ -109,16 +103,14 @@ def draw_link_buttons(self, context: bpy.types.Context):
 
 def draw_slot_target_selector(self, context: bpy.types.Context, slot: bpy.types.ActionSlot | None = None):
 	"""Gui to select a Slots target"""
-	if(not context or not hasattr(context, "active_action") or not context.active_action):
-		return
 	layout: bpy.types.UILayout = self.layout
 
 	if(slot is not None):
-		active_slot = slot
+		active_slot: bpy.types.ActionSlot = slot
 		slot_link = find_slot_link(context.active_action, slot.handle)
 	elif(len(context.active_action.slots) > context.active_action.slot_link.active_index):
-		active_slot = context.active_action.slots[context.active_action.slot_link.active_index]
-		slot_link = find_slot_link(context.active_action, active_slot.handle)  # pyright: ignore[reportAssignmentType]
+		active_slot: bpy.types.ActionSlot = context.active_action.slots[context.active_action.slot_link.active_index]
+		slot_link = find_slot_link(context.active_action, active_slot.handle)
 	else:
 		return
 
@@ -154,8 +146,6 @@ def draw_slot_target_selector(self, context: bpy.types.Context, slot: bpy.types.
 
 def draw_orphan_slots(self, context: bpy.types.Context):
 	"""If a slot was removed, the SlotLink on the Action will remain. Remove any orphaned SlotLinks."""
-	if(not context or not hasattr(context, "active_action") or not context.active_action):
-		return
 	layout: bpy.types.UILayout = self.layout
 
 	handled_slot_links = []
@@ -181,8 +171,6 @@ def draw_orphan_slots(self, context: bpy.types.Context):
 
 def draw_slot_link_editor(self, context: bpy.types.Context):
 	"""Draw the full Slot Link editor GUI"""
-	if(not context or not hasattr(context, "active_action") or not context.active_action):
-		return
 	layout: bpy.types.UILayout = self.layout
 
 	row = layout.row()

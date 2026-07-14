@@ -12,23 +12,86 @@ _blender_data_subkeys = ["node_tree", "shape_keys", "compositing_node_group"]
 Check
 """
 
+
+def has_animation_data(blender_data_block: bpy.types.ID) -> bool:
+	if(hasattr(blender_data_block, "animation_data") and blender_data_block.animation_data is not None):
+		return True
+	else:
+		return False
+
 def check_action_in_data_block(action: bpy.types.Action | None, blender_data_block: bpy.types.ID) -> bool:
-	if(hasattr(blender_data_block, "animation_data")):
-		if(not blender_data_block.animation_data):
-			return False
-		elif(blender_data_block.animation_data.action != action):
-			return False
-		# TODO check slots as well if present
+	if(not action or not hasattr(blender_data_block, "animation_data")):
+		return True
+	if(blender_data_block.animation_data is None or blender_data_block.animation_data.action != action):
+		return False
+	if(type(blender_data_block) is not bpy.types.Object): # SlotLink targets allows only Objects
+		return True
+	for slot_link in action.slot_link.links:
+		slot_link: SlotLink = slot_link
+		if(slot_link.target != blender_data_block):
+			continue
+		for slot in action.slots:
+			if(slot.handle == slot_link.slot_handle):
+				break
+		else:
+			continue
+		if(not slot):
+			continue
+
+		target_object: bpy.types.Object = blender_data_block
+
+		# why u no polymorphism?
+		match(slot.target_id_type):
+			case "OBJECT":
+				if(blender_data_block.animation_data.action_slot != slot):
+					return False
+
+			case "MATERIAL":
+				if(target_object.material_slots and len(target_object.material_slots) > slot_link.datablock_index):
+					target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index]  # pyright: ignore[reportRedeclaration]
+					if(target_material_slot.material):
+						if(not has_animation_data(target_material_slot.material) or target_material_slot.material.animation_data.action_slot == slot):
+							return False
+
+			case "NODETREE":
+				if(target_object.material_slots and len(target_object.material_slots) > slot_link.datablock_index):
+					target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index]
+					if(target_material_slot.material and target_material_slot.material.node_tree):
+						if(not has_animation_data(target_material_slot.material.node_tree) or target_material_slot.material.node_tree.animation_data.action_slot != slot):
+							return False
+
+			case "KEY":
+				if(target_object.data and type(target_object.data) is bpy.types.Mesh and target_object.data.shape_keys):
+					if(not has_animation_data(target_object.data.shape_keys) or target_object.data.shape_keys.animation_data.action_slot != slot):
+						return False
+
+			case "ARMATURE":
+				if(target_object.data and type(target_object.data) is bpy.types.Armature):
+					if(not has_animation_data(target_object.data) or target_object.data.animation_data.action_slot != slot):
+						return False
+
+			case "CAMERA":
+				if(target_object.data and type(target_object.data) is bpy.types.Camera):
+					if(not has_animation_data(target_object.data) or target_object.data.animation_data.action_slot != slot):
+						return False
+
+			case "LIGHT":
+				if(target_object.data and isinstance(target_object.data, bpy.types.Light)):
+					if(not has_animation_data(target_object.data) or target_object.data.animation_data.action_slot != slot):
+						return False
+
 	return True
 
 def check_action(action: bpy.types.Action) -> bool:
 	for data_key in _blender_data_keys:
 		thing_type = getattr(bpy.data, data_key)
 		for thing in thing_type:
-			if(not check_action_in_data_block(action, thing)): return False
+			if(not check_action_in_data_block(action, thing)):
+				return False
 			for sub_key in _blender_data_subkeys:
 				if(hasattr(thing, sub_key)):
-					if(not check_action_in_data_block(action, getattr(thing, sub_key))): return False
+					if(not check_action_in_data_block(action, getattr(thing, sub_key))):
+						return False
 	return True
 
 

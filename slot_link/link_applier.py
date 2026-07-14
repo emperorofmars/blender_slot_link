@@ -14,9 +14,11 @@ Check
 
 def check_action_in_data_block(action: bpy.types.Action | None, blender_data_block: bpy.types.ID) -> bool:
 	if(hasattr(blender_data_block, "animation_data")):
-		if(not blender_data_block.animation_data or blender_data_block.animation_data.action != action):
-			# todo check slots as well if present
+		if(not blender_data_block.animation_data):
 			return False
+		elif(blender_data_block.animation_data.action != action):
+			return False
+		# TODO check slots as well if present
 	return True
 
 def check_action(action: bpy.types.Action) -> bool:
@@ -35,6 +37,10 @@ Prepare animation_data
 """
 
 def prepare_data_block(action: bpy.types.Action | None, blender_data_block: bpy.types.ID):
+	"""
+	Clear the `animation_data` on a Blender ID.
+	If an Action is provided, create new `animation_data`, set the Action, but no Slot.
+	"""
 	if(hasattr(blender_data_block, "animation_data")):
 		blender_data_block.animation_data_clear()
 		if(action):
@@ -44,6 +50,10 @@ def prepare_data_block(action: bpy.types.Action | None, blender_data_block: bpy.
 				blender_data_block.animation_data.action_slot = None
 
 def prepare_all_data_blocks(action: bpy.types.Action | None):
+	"""
+	Clear the `animation_data` on all Blender IDs.
+	If an Action is provided, create new `animation_data`, set the Action, but no Slot.
+	"""
 	if(action):
 		action.use_fake_user = True
 
@@ -57,7 +67,9 @@ def prepare_all_data_blocks(action: bpy.types.Action | None):
 	return True
 
 class PrepareLinks(bpy.types.Operator):
-	"""Link this Action to every data-block, remove any other Action from being linked anywhere"""
+	"""
+	Link this Action to every data-block, remove any other Actions from being linked anywhere.
+	"""
 	bl_idname = "slot_link.prepare"
 	bl_label = "Prepare"
 	bl_category = "anim"
@@ -65,14 +77,17 @@ class PrepareLinks(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context: bpy.types.Context):
-		return context.active_action is not None
+		return hasattr(context, "active_action") and context.active_action is not None
 
 	def execute(self, context: bpy.types.Context) -> set:
 		prepare_all_data_blocks(context.active_action)
 		return {"FINISHED"}
 
+
 class UnlinkAction(bpy.types.Operator):
-	"""Remove any Action from being linked anywhere"""
+	"""
+	Remove any Action from being linked anywhere.
+	"""
 	bl_idname = "slot_link.unlink"
 	bl_label = "Unlink"
 	bl_category = "anim"
@@ -88,12 +103,20 @@ Link
 """
 
 def set_animation_data(blender_thing: bpy.types.ID, action: bpy.types.Action, slot: bpy.types.ActionSlot):
+	"""
+	Set the Action and Slot in the `animation_data` of a Blender ID.
+	"""
 	if(not blender_thing.animation_data):
 		blender_thing.animation_data_create()
 	blender_thing.animation_data.action = action
 	blender_thing.animation_data.action_slot = slot
 
 def link_slot(action: bpy.types.Action, slot: bpy.types.ActionSlot, slot_link: SlotLink):
+	"""
+	Determine the animation target based on the `slot_link`.
+
+	Set the `action` and `slot` to that targets `animation_data`.
+	"""
 	if(not slot_link.target): return
 	target_object: bpy.types.Object = slot_link.target
 
@@ -138,6 +161,11 @@ def link_slot(action: bpy.types.Action, slot: bpy.types.ActionSlot, slot_link: S
 
 
 def link_slots(action: bpy.types.Action):
+	"""
+	Link the `action` to all data-blocks in the Scene.
+
+	Sets the Slots to the targets, determined by each Slots `slot_link` .
+	"""
 	for slot_link in action.slot_link.links:
 		slot_link: SlotLink = slot_link # Because autocomplete
 		if(slot_link.target and slot_link.slot_handle):
@@ -147,7 +175,13 @@ def link_slots(action: bpy.types.Action):
 					break
 
 class LinkSlots(bpy.types.Operator):
-	"""Link this Action and its Slots in the selected targets"""
+	"""
+	Link the `action` to all data-blocks in the Scene.
+
+	Sets the Slots to the targets, determined by each Slots `slot_link`.
+
+	If a `reset_animation` is provided, apply it first to bring the Scene into a consistent state.
+	"""
 	bl_idname = "slot_link.link"
 	bl_label = "Link"
 	bl_category = "anim"
@@ -157,7 +191,7 @@ class LinkSlots(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context: bpy.types.Context):
-		return context.active_action is not None
+		return hasattr(context, "active_action") and context.active_action is not None
 
 	def execute(self, context: bpy.types.Context) -> set:
 		# Link the reset animation first if applicable

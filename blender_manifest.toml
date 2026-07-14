@@ -3,7 +3,7 @@ schema_version = "1.0.0"
 # Example of manifest file for a Blender extension
 # Change the values according to your extension
 id = "slot_link"
-version = "0.0.13"
+version = "0.1.0"
 name = "Slot Link"
 tagline = "Easily manage projects with multiple separate animations"
 maintainer = "Mars (https://squirrelbite.com)"
@@ -78,17 +78,18 @@ paths_exclude_pattern = [
 	"/*.zip",
 	"/.vscode/",
 	"/.zed/",
-	".venv",
-	"/docs/",
-	"/readme.md",
+	"/.venv",
 	"/.editorconfig",
 	"/.gitignore",
+	"/.editorconfig",
+	"/readme.md",
 	"/LICENSE-APACHE2",
 	"/LICENSE-MIT",
+	"/CONTRIBUTING.md",
+	"/requirements.txt",
+	"/pyproject.toml",
 	"/packages",
-	"/build_extension.py",
+	"/docs/",
 	"/bpydev.py",
 	"/bpydev.toml",
-	"/pyproject.toml",
-	"/requirements.txt",
 ]

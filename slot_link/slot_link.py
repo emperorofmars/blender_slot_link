@@ -4,11 +4,14 @@ import bpy
 def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
 	"""
 	Super powered poll function.
+
 	Determines if the `target_object` is suitable based on the SlotLinks Slots `target_id_type`.
+
 	If relevant, also looks into the animation and figures out if the `target_object` is suitable, based on the animations fcurve data_paths.
 	"""
-	for slot in self.id_data.slots:
-		slot: bpy.types.ActionSlot = slot
+	action: bpy.types.Action = self.id_data
+
+	for slot in action.slots:
 		if(slot.handle == self.slot_handle):
 			break
 	else:
@@ -16,7 +19,6 @@ def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
 
 	match slot.target_id_type:
 		case "OBJECT":
-			action: bpy.types.Action = self.id_data
 			for layer in action.layers:
 				for strip in layer.strips:  # pyright: ignore[reportAssignmentType]
 					if(strip.type == "KEYFRAME"):
@@ -53,9 +55,9 @@ class SlotLink(bpy.types.PropertyGroup):
 	"""
 	Links an Actions Slot to a target `bpy.types.Object`.
 
-	If the Slot has a type of i.e. `key_blocks`, it means this link is targeting the skape-keys of the mesh that is instantiated on the target object.
+	If the Slot has a `target_id_type` of i.e. `KEY`, it means this link is targeting the skape-keys of a mesh that is instantiated on the `target` object.
 
-	`datablock_index` is used for in case the Slot has a type of `material` for example. Then the index points to the instantiated meshes material index.
+	`datablock_index` is used in case the Slot has a `target_id_type` of `MATERIAL` for example. Then the index points to the instantiated meshes material index.
 	"""
 	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1) # type: ignore
 	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="The Object this Slot should animate", poll=_slot_link_poll) # type: ignore
@@ -64,7 +66,7 @@ class SlotLink(bpy.types.PropertyGroup):
 
 class ActionSlotLink(bpy.types.PropertyGroup):
 	"""
-	Redefine a Blender Action to a full standalone animation.
+	Redefine Blender Actions into full standalone animations.
 
 	Holds a `SlotLink` object for each Slot of an Action.
 

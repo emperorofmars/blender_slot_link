@@ -4,7 +4,7 @@ from .package_key import package_key
 from .slot_link_ui_parts import draw_link_buttons, draw_link_messages, draw_slot_link_editor, draw_slot_target_selector
 
 
-def _draw_action_slot_link(self, context: bpy.types.Context):
+def _draw_editor(self, context: bpy.types.Context):
 	"""Draw the full Slot Link editor GUI for the Action panel"""
 	if(not context or not hasattr(context, "active_action") or not context.active_action or context.preferences.addons[package_key].preferences.use_separate_editor):
 		return
@@ -13,7 +13,7 @@ def _draw_action_slot_link(self, context: bpy.types.Context):
 	draw_slot_link_editor(self, context)
 
 
-def _draw_slot_link(self, context: bpy.types.Context):
+def _draw_slot_link_selector(self, context: bpy.types.Context):
 	"""Draw the target-selector GUI for the Slot panel"""
 	if(not context or not hasattr(context, "active_action") or not context.active_action or context.preferences.addons[package_key].preferences.use_separate_editor):
 		return
@@ -69,12 +69,12 @@ def register():
 	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_link_buttons)
 	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_spacer_mini)
 	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_link_messages)
-	bpy.types.DOPESHEET_PT_action.append(_draw_action_slot_link)
-	bpy.types.DOPESHEET_PT_action_slot.append(_draw_slot_link)
+	bpy.types.DOPESHEET_PT_action.append(_draw_editor)
+	bpy.types.DOPESHEET_PT_action_slot.append(_draw_slot_link_selector)
 
 def unregister():
-	bpy.types.DOPESHEET_PT_action_slot.remove(_draw_slot_link)
-	bpy.types.DOPESHEET_PT_action.remove(_draw_action_slot_link)
+	bpy.types.DOPESHEET_PT_action_slot.remove(_draw_slot_link_selector)
+	bpy.types.DOPESHEET_PT_action.remove(_draw_editor)
 	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_link_messages)
 	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_spacer_mini)
 	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_link_buttons)

@@ -12,38 +12,44 @@ _blender_data_subkeys = ["node_tree", "shape_keys", "compositing_node_group"]
 Check
 """
 
-
 def has_animation_data(blender_data_block: bpy.types.ID) -> bool:
 	if(hasattr(blender_data_block, "animation_data") and blender_data_block.animation_data is not None):
 		return True
 	else:
 		return False
 
-def check_action_in_data_block(action: bpy.types.Action | None, blender_data_block: bpy.types.ID) -> bool:
-	if(not action or not hasattr(blender_data_block, "animation_data")):
+def check_action_in_data_block(action: bpy.types.Action, blender_data_block: bpy.types.ID) -> bool:
+	if(not hasattr(blender_data_block, "animation_data")):
 		return True
 	if(blender_data_block.animation_data is None or blender_data_block.animation_data.action != action):
 		return False
-	if(type(blender_data_block) is not bpy.types.Object): # SlotLink targets allows only Objects
-		return True
+	return True
+
+def check_action(action: bpy.types.Action) -> bool:
+	for data_key in _blender_data_keys:
+		thing_type = getattr(bpy.data, data_key)
+		for thing in thing_type:
+			if(not check_action_in_data_block(action, thing)):
+				return False
+			for sub_key in _blender_data_subkeys:
+				if(hasattr(thing, sub_key)):
+					if(not check_action_in_data_block(action, getattr(thing, sub_key))):
+						return False
+
 	for slot_link in action.slot_link.links:
 		slot_link: SlotLink = slot_link
-		if(slot_link.target != blender_data_block):
-			continue
 		for slot in action.slots:
 			if(slot.handle == slot_link.slot_handle):
 				break
 		else:
 			continue
-		if(not slot):
-			continue
 
-		target_object: bpy.types.Object = blender_data_block
+		target_object: bpy.types.Object = slot_link.target
 
 		# why u no polymorphism?
 		match(slot.target_id_type):
 			case "OBJECT":
-				if(blender_data_block.animation_data.action_slot != slot):
+				if(target_object.animation_data.action_slot != slot):
 					return False
 
 			case "MATERIAL":
@@ -78,19 +84,6 @@ def check_action_in_data_block(action: bpy.types.Action | None, blender_data_blo
 			case "LIGHT":
 				if(target_object.data and isinstance(target_object.data, bpy.types.Light)):
 					if(not has_animation_data(target_object.data) or target_object.data.animation_data.action_slot != slot):
-						return False
-
-	return True
-
-def check_action(action: bpy.types.Action) -> bool:
-	for data_key in _blender_data_keys:
-		thing_type = getattr(bpy.data, data_key)
-		for thing in thing_type:
-			if(not check_action_in_data_block(action, thing)):
-				return False
-			for sub_key in _blender_data_subkeys:
-				if(hasattr(thing, sub_key)):
-					if(not check_action_in_data_block(action, getattr(thing, sub_key))):
 						return False
 	return True
 

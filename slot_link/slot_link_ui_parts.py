@@ -1,7 +1,7 @@
 import bpy
 
 from .misc import OpenDocumentation
-from .slot_link import AddSlotLink, RemoveSlotLink, SlotLink, set_slot_link_poll_type
+from .slot_link import AddSlotLink, RemoveSlotLink, SlotLink
 from .link_applier import LinkSlots, PrepareLinks, check_action
 
 
@@ -123,17 +123,6 @@ def draw_slot_target_selector(self, context: bpy.types.Context, slot: bpy.types.
 		return
 
 	if(slot_link):
-		if(active_slot.target_id_type in ["KEY", "MESH", "MATERIAL", "NODETREE"]):
-			set_slot_link_poll_type(bpy.types.Mesh)
-		elif(active_slot.target_id_type in ["ARMATURE"]):
-			set_slot_link_poll_type(bpy.types.Armature)
-		elif(active_slot.target_id_type in ["CAMERA"]):
-			set_slot_link_poll_type(bpy.types.Camera)
-		elif(active_slot.target_id_type in ["LIGHT"]):
-			set_slot_link_poll_type(bpy.types.Light)
-		else:
-			set_slot_link_poll_type(None)
-
 		layout.use_property_split = True
 		col = layout.column()
 		if(not slot_link.target):

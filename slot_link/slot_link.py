@@ -1,19 +1,46 @@
 import bpy
 
 
-_slot_link_poll_type = None
-"""
-Filter for which objects will be available to link as a SlotLink's `target`.
-I.e. when a Slot is of the type "KEY", show only Objects which instantiate a Mesh.
-"""
+def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
+	for slot in self.id_data.slots:
+		slot: bpy.types.ActionSlot = slot
+		if(slot.handle == self.slot_handle):
+			break
+	else:
+		return False
 
-def set_slot_link_poll_type(slot_link_poll_type: type | None):
-	global _slot_link_poll_type
-	_slot_link_poll_type = slot_link_poll_type
-
-def _slot_link_poll(self, blender_object: bpy.types.Object) -> bool:
-	global _slot_link_poll_type
-	return _slot_link_poll_type is None or isinstance(blender_object.data, _slot_link_poll_type)
+	match slot.target_id_type:
+		case "OBJECT":
+			action: bpy.types.Action = self.id_data
+			for layer in action.layers:
+				for strip in layer.strips:  # pyright: ignore[reportAssignmentType]
+					if(strip.type == "KEYFRAME"):
+						strip: bpy.types.ActionKeyframeStrip = strip
+						for channelbag in strip.channelbags:
+							if(channelbag.slot_handle == slot.handle):
+								for fcurve in channelbag.fcurves:
+									if(fcurve.data_path.startswith("pose.") and type(target_object.data) is not bpy.types.Armature):
+										return False
+			return True
+		case "MATERIAL":
+			if(target_object.material_slots and len(target_object.material_slots) > 0):
+				return True
+		case "NODETREE":
+			if(target_object.material_slots and len(target_object.material_slots) > 0):
+				return True
+		case "KEY":
+			if(target_object.data and type(target_object.data) is bpy.types.Mesh and target_object.data.shape_keys):
+				return True
+		case "ARMATURE":
+			if(target_object.data and type(target_object.data) is bpy.types.Armature):
+				return True
+		case "CAMERA":
+			if(target_object.data and type(target_object.data) is bpy.types.Camera):
+				return True
+		case "LIGHT":
+			if(target_object.data and isinstance(target_object.data, bpy.types.Light)):
+				return True
+	return False
 
 
 class SlotLink(bpy.types.PropertyGroup):

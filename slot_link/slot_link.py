@@ -2,6 +2,11 @@ import bpy
 
 
 def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
+	"""
+	Super powered poll function.
+	Determines if the `target_object` is suitable based on the SlotLinks Slots `target_id_type`.
+	If relevant, also looks into the animation and figures out if the `target_object` is suitable, based on the animations fcurve data_paths.
+	"""
 	for slot in self.id_data.slots:
 		slot: bpy.types.ActionSlot = slot
 		if(slot.handle == self.slot_handle):
@@ -40,6 +45,7 @@ def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
 		case "LIGHT":
 			if(target_object.data and isinstance(target_object.data, bpy.types.Light)):
 				return True
+		# TODO support more eventually
 	return False
 
 

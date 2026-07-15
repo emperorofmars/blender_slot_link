@@ -13,12 +13,14 @@ Check
 """
 
 def has_animation_data(blender_data_block: bpy.types.ID) -> bool:
+	"""Check if the `blender_data_block` has valid `animation_data`"""
 	if(hasattr(blender_data_block, "animation_data") and blender_data_block.animation_data is not None):
 		return True
 	else:
 		return False
 
 def check_action_in_data_block(action: bpy.types.Action, blender_data_block: bpy.types.ID) -> bool:
+	"""Check if the action is linked to the `blender_data_block`"""
 	if(not hasattr(blender_data_block, "animation_data")):
 		return True
 	if(blender_data_block.animation_data is None or blender_data_block.animation_data.action != action):
@@ -26,6 +28,7 @@ def check_action_in_data_block(action: bpy.types.Action, blender_data_block: bpy
 	return True
 
 def check_action(action: bpy.types.Action) -> bool:
+	"""Check if the action is linked correctly throughout the Scene"""
 	for data_key in _blender_data_keys:
 		thing_type = getattr(bpy.data, data_key)
 		for thing in thing_type:
@@ -45,6 +48,8 @@ def check_action(action: bpy.types.Action) -> bool:
 			continue
 
 		target_object: bpy.types.Object = slot_link.target
+		if(not target_object):
+			return True # The action is still linked correctly
 
 		# why u no polymorphism?
 		match(slot.target_id_type):
@@ -108,6 +113,7 @@ def prepare_data_block(action: bpy.types.Action | None, blender_data_block: bpy.
 def prepare_all_data_blocks(action: bpy.types.Action | None):
 	"""
 	Clear the `animation_data` on all Blender IDs.
+
 	If an Action is provided, create new `animation_data`, set the Action, but no Slot.
 	"""
 	if(action):
@@ -123,9 +129,8 @@ def prepare_all_data_blocks(action: bpy.types.Action | None):
 	return True
 
 class PrepareLinks(bpy.types.Operator):
-	"""
-	Link this Action to every data-block, remove any other Actions from being linked anywhere.
-	"""
+	"""Link the Action to everything in the Scene.
+	Prevents any other Actions from being linked anywhere"""
 	bl_idname = "slot_link.prepare"
 	bl_label = "Prepare"
 	bl_category = "anim"
@@ -140,12 +145,10 @@ class PrepareLinks(bpy.types.Operator):
 		return {"FINISHED"}
 
 
-class UnlinkAction(bpy.types.Operator):
-	"""
-	Remove any Action from being linked anywhere.
-	"""
-	bl_idname = "slot_link.unlink"
-	bl_label = "Unlink"
+class ClearScene(bpy.types.Operator):
+	"""Clear the Scene of any animation data"""
+	bl_idname = "slot_link.clear_scene"
+	bl_label = "Clear Scene"
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
@@ -218,9 +221,9 @@ def link_slot(action: bpy.types.Action, slot: bpy.types.ActionSlot, slot_link: S
 
 def link_slots(action: bpy.types.Action):
 	"""
-	Link the `action` to all data-blocks in the Scene.
+	Link the Action to all data-blocks in the Scene.
 
-	Sets the Slots to the targets, determined by each Slots `slot_link` .
+	Links its Slots to the targets, determined by each Slots `slot_link`.
 	"""
 	for slot_link in action.slot_link.links:
 		slot_link: SlotLink = slot_link # Because autocomplete
@@ -231,19 +234,15 @@ def link_slots(action: bpy.types.Action):
 					break
 
 class LinkSlots(bpy.types.Operator):
-	"""
-	Link the `action` to all data-blocks in the Scene.
-
-	Sets the Slots to the targets, determined by each Slots `slot_link`.
-
-	If a `reset_animation` is provided, apply it first to bring the Scene into a consistent state.
-	"""
+	"""Link the Action to everything in the Scene.
+	Link its Slots to the selected targets.
+	If a Reset Animation is selected, it will be used to bring the Scene into a consistent state"""
 	bl_idname = "slot_link.link"
 	bl_label = "Link"
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
-	use_reset: bpy.props.BoolProperty(name="Use Reset", default=True) # type: ignore
+	use_reset: bpy.props.BoolProperty(name="Use Reset", default=True, description="If a Reset Animation is selected, it will be used to bring the Scene into a consistent state") # type: ignore
 
 	@classmethod
 	def poll(cls, context: bpy.types.Context):

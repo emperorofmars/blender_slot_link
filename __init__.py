@@ -12,8 +12,10 @@ auto_load.init()
 class SlotLinkAddonPreferences(bpy.types.AddonPreferences):
 	bl_idname = package_key.package_key  # pyright: ignore[reportAssignmentType]
 
-	use_separate_editor: bpy.props.BoolProperty(name="Move SlotLink editor to separate Panel", default=False)
+	use_separate_editor: bpy.props.BoolProperty(name="Move Slot Link editor to separate Panel", default=False)
+	hide_slot_link_list: bpy.props.BoolProperty(name="Hide the list of Slot Links (Use the Slot Panel instead)", default=False)
 	hide_dopesheet_header_ui: bpy.props.BoolProperty(name="Hide Dopesheet header GUI", default=False)
+	hide_documentation_link: bpy.props.BoolProperty(name="Hide Documentation link", default=False)
 
 	def draw(self, context: bpy.types.Context):
 		layout = self.layout
@@ -24,7 +26,9 @@ class SlotLinkAddonPreferences(bpy.types.AddonPreferences):
 			layout.link(text="Slot Link Documentation", icon="HELP", url="https://docs.stfform.at/guide/blender/slot_link.html")
 
 		layout.prop(self, "use_separate_editor")
+		layout.prop(self, "hide_slot_link_list")
 		layout.prop(self, "hide_dopesheet_header_ui")
+		layout.prop(self, "hide_documentation_link")
 
 
 def slot_link_docs():

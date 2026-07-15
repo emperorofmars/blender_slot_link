@@ -2,7 +2,7 @@ import bpy
 
 
 class OpenDocumentation(bpy.types.Operator):
-	"""Open the Slot Link Documentation in Webbrowser"""
+	"""Open the Slot Link documentation in a webbrowser"""
 	bl_idname = "slot_link.open_documentation"
 	bl_label = "Open Documentation"
 

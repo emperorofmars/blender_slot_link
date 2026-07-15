@@ -23,7 +23,7 @@ def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
 		case "OBJECT":
 			# plz no
 			for layer in action.layers:
-				for strip in layer.strips:  # pyright: ignore[reportAssignmentType]
+				for strip in layer.strips: # pyright: ignore[reportAssignmentType]
 					if(strip.type == "KEYFRAME"):
 						strip: bpy.types.ActionKeyframeStrip = strip
 						for channelbag in strip.channelbags:
@@ -32,7 +32,9 @@ def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
 									if(fcurve.data_path.startswith("pose.")):
 										if(type(target_object.data) is not bpy.types.Armature):
 											return False
-										#if(match := re.search(r"^pose.bones\[\"(?P<bone_name>[\w. -:,]+)\"\]", fcurve.data_path)): # Too far? What if user deletes a bone from an animated armature? Calculate confidence based on the percentage of matched bones and use that as a cutoff?
+
+										# Too far? What if user deletes a bone from an animated armature? Calculate confidence based on the percentage of matched bones and use that as a cutoff? What if it animated only one bone??
+										#if(match := re.search(r"^pose.bones\[\"(?P<bone_name>[\w. -:,]+)\"\]", fcurve.data_path)):
 										#	if(match.groupdict()["bone_name"] not in target_object.data.bones):
 										#		return False
 			return True
@@ -89,7 +91,7 @@ class ActionSlotLink(bpy.types.PropertyGroup):
 
 
 class AddSlotLink(bpy.types.Operator):
-	"""Setup a target for this Action-Slot"""
+	"""Setup an animation target for this Action-Slot"""
 	bl_idname = "slot_link.add"
 	bl_label = "Setup Slot Link"
 	bl_category = "anim"

@@ -10,22 +10,22 @@ def _draw_editor(self, context: bpy.types.Context):
 		return
 	layout: bpy.types.UILayout = self.layout
 	layout.separator(factor=2, type="LINE")
-	draw_slot_link_editor(self, context)
+	draw_slot_link_editor(self.layout, context)
 
 
 def _draw_slot_link_selector(self, context: bpy.types.Context):
 	"""Draw the target-selector GUI for the Slot panel"""
-	if(not context or not hasattr(context, "active_action") or not context.active_action or context.preferences.addons[package_key].preferences.use_separate_editor):
+	if(not context or not hasattr(context, "active_action") or not context.active_action):
 		return
 	layout: bpy.types.UILayout = self.layout
-	draw_slot_target_selector(self, context, context.active_action.slots.active)
+	draw_slot_target_selector(self.layout, context, context.active_action.slots.active)
 
 
 def _draw_spacer(self, context: bpy.types.Context):
 	"""Draw a Spacer in the Dopesheet header so there is a gab between the menus and the slot link buttons"""
 	if(not context or not hasattr(context, "active_action") or not context.active_action or context.preferences.addons[package_key].preferences.hide_dopesheet_header_ui):
 		return
-	self.layout.separator(factor=12)
+	self.layout.separator(factor=8)
 
 def _draw_spacer_mini(self, context: bpy.types.Context):
 	"""Draw a Spacer in the Dopesheet header so there is a gab between the menus and the slot link buttons"""
@@ -36,12 +36,12 @@ def _draw_spacer_mini(self, context: bpy.types.Context):
 def _draw_link_buttons(self, context: bpy.types.Context):
 	if(not context or not hasattr(context, "active_action") or not context.active_action or context.preferences.addons[package_key].preferences.hide_dopesheet_header_ui):
 		return
-	draw_link_buttons(self, context)
+	draw_link_buttons(self.layout, context, True)
 
 def _draw_link_messages(self, context: bpy.types.Context):
 	if(not context or not hasattr(context, "active_action") or not context.active_action or context.preferences.addons[package_key].preferences.hide_dopesheet_header_ui):
 		return
-	draw_link_messages(self, context)
+	draw_link_messages(self.layout, context, True)
 
 
 class SlotLinkEditor(bpy.types.Panel):
@@ -61,7 +61,7 @@ class SlotLinkEditor(bpy.types.Panel):
 		self.layout.label(icon="DECORATE_LINKED")
 
 	def draw(self, context: bpy.types.Context):
-		draw_slot_link_editor(self, context)
+		draw_slot_link_editor(self.layout, context) # pyright: ignore[reportArgumentType]
 
 
 def register():

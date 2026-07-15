@@ -1,15 +1,27 @@
 # Blender Slot Link
 **Slot Link helps you manage Blender projects with multiple separate animations.**
 
-It automates the unlinking & linking of Actions and Slots, without requiring you to remember which goes where.
+Blender supports only one animation per .blend file.\
+Actions are modular pieces from which the one animation is composed of.
 
-Re-apply an Action anytime by pressing `Link Slots`.
+**Slot Link redefines Actions to be full standalone animations.**\
+To achieve that, you have to set the animation target for each Slot of an Action.
+
+Press the `Link Slots` button to play and edit an animation.\
+Easily switch between animations with only one additional button press.
 
 *Requires Blender 4.5 or higher. Not compatible with legacy Actions.*
 
 🌰 **[Installation](https://extensions.blender.org/add-ons/slot-link/)** 🌰 **[User Guide](https://docs.stfform.at/guide/blender/slot_link.html)** 🌰 **[Report Issues](https://codeberg.org/emperorofmars/blender_slot_link/issues)**
 
 ![Screenshot of the Slot Link editor. This GUI allows specifying the targeted Objects of the Slots of a Blender Action.](docs/img/slot_link_editor.png)
+
+> [!NOTE]
+> Slot Link purposely allows only selecting Objects as targets.
+>
+> If you animated a Mesh's Shape Keys, simply select the Object on which that Mesh is instantiated.
+>
+> This has the added advantage of being able to animate multiple instances of the same Mesh separately.
 
 Please open issues for any bugs or misbehavior you notice. Feel free to open issues for feature requests.
 
@@ -39,24 +51,15 @@ All source-code in this repository, except when noted in individual files and/or
 
 
 <!--
-**Commands to build the extension.**\
-*Change the Blender version and path accordingly.*
+**Build the extension**
 
-* Set Blender Path Variable
-	* Windows (Git Bash)
-		``` sh
-		BLENDER_PATH="C:\Program Files\Blender Foundation\Blender 4.5\blender.exe"
-		```
-	* Linux Bash
-		``` sh
-		BLENDER_PATH=~/Software/blender/blender-5.0.1-linux-x64/blender
-		```
-	* Linux Fish
-		``` sh
-		set BLENDER_PATH ~/Software/blender/blender-5.0.1-linux-x64/blender
-		```
-* Build Extension
-	```sh
-	$BLENDER_PATH --command extension build --output-dir=./packages
-	```
+Install dependencies (preferably into a venv):
+``` sh
+pip install -r requirements.txt
+```
+
+Build the extension:
+``` python
+python bpydev.py package -o packages
+```
 -->

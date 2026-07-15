@@ -1,5 +1,6 @@
 import bpy
 
+from .package_key import package_key
 from .misc import OpenDocumentation
 from .slot_link import AddSlotLink, RemoveSlotLink, SlotLink
 from .link_applier import LinkSlots, PrepareLinks, check_action
@@ -15,7 +16,7 @@ def find_slot_link(action: bpy.types.Action | None, slot_handle: int) -> SlotLin
 
 
 class SlotLinkList(bpy.types.UIList):
-	"""Display the SlotLinks for each Slot of an Action"""
+	"""Display the Slot Link for each Slot of an Action"""
 	bl_idname = "COLLECTION_UL_slot_link_list"
 
 	def draw_item(self, context: bpy.types.Context, layout: bpy.types.UILayout, data: bpy.types.Action, item: bpy.types.ActionSlot, icon, active_data, active_propname, index):  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -24,15 +25,15 @@ class SlotLinkList(bpy.types.UIList):
 			layout.alert = True
 
 		split = layout.split(factor=0.45)
-		split.label(text=f"{item.name_display}", icon_value = item.target_id_type_icon)
+		split.label(text=f"{item.name_display} ({item.target_id_type.capitalize()})", icon_value = item.target_id_type_icon)
 		if(slot_link and slot_link.target):
 			split.label(text=slot_link.target.name, icon="RIGHTARROW")
 		else:
 			split.label(text="NONE", icon="ERROR")
 
 
-def draw_link_messages(self, context: bpy.types.Context) -> bool:
-	layout: bpy.types.UILayout = self.layout
+def draw_link_messages(layout: bpy.types.UILayout, context: bpy.types.Context, only_error: bool = False) -> int:
+	"""Draw warnings"""
 	action = context.active_action
 
 	if(action.is_action_legacy):
@@ -40,36 +41,36 @@ def draw_link_messages(self, context: bpy.types.Context) -> bool:
 			row = layout.row()
 			row.alert = True
 			row.label(text="Prepare the Action!", icon="WARNING_LARGE")
-			return False
+			return -1
 		if(action.users > 1):
 			row = layout.row()
 			row.label(text="Please add a new Slot!", icon="INFO")
-			return False
+			return -1
 
 	# Check if all Slots have targets!
 	successes = 0
 	for slot in action.slots:
 		slot_link = find_slot_link(action, slot.handle)
-		if(slot_link and slot_link.target):
+		if(slot_link and slot_link.target): # TODO check if the target supports all animated properties
 			successes += 1
 	if(successes < len(action.slots)):
 		row = layout.row()
 		row.alert = True
 		row.label(text="Not all Slots have Targets!", icon="WARNING_LARGE")
-		return True
+		return 1
 
 	# Check whether this Action is linked everywhere state
-	if(not action or not check_action(action)):
+	if(not only_error and not check_action(action)): # pyright: ignore[reportArgumentType]
 		row = layout.row()
 		row.alert = True
 		row.label(text="Not Linked!", icon="WARNING_LARGE")
-		return True
-	return True
+		return 0
+	return 0
 
 
-def draw_reset_animation_selector(self, context: bpy.types.Context):
+def draw_reset_animation_selector(layout: bpy.types.UILayout, context: bpy.types.Context):
 	"""Mark the Action as a reset animation, or select a reset animation"""
-	layout: bpy.types.UILayout = self.layout.column(align=True)
+	layout = layout.column(align=True)
 
 	# Reset animation
 	if(not context.active_action.slot_link.reset_animation):
@@ -82,10 +83,8 @@ def draw_reset_animation_selector(self, context: bpy.types.Context):
 			row.label(text="The Reset Animation has no Targets!", icon="ERROR")
 
 
-def draw_link_buttons(self, context: bpy.types.Context):
+def draw_link_buttons(layout: bpy.types.UILayout, context: bpy.types.Context, only_one_button: bool = False, scale: float = 1):
 	"""The main 'Link Slots' buttons"""
-	layout: bpy.types.UILayout = self.layout
-
 	# Prepare legacy/newly created Action
 	if(context.active_action.is_action_legacy):
 		row = layout.row()
@@ -93,18 +92,22 @@ def draw_link_buttons(self, context: bpy.types.Context):
 		layout.operator(PrepareLinks.bl_idname)
 		return
 
+	state = check_action(context.active_action) # pyright: ignore[reportArgumentType]
+
 	# Main link button
 	row = layout.row(align=True)
 	row.alignment = "EXPAND"
+	row.alert = state == 0
+	row.scale_x = row.scale_y = scale
 	row.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED").use_reset = True
-	if(context.active_action.slot_link.reset_animation):
+	if(not only_one_button and context.active_action.slot_link.reset_animation):
+		row = row.row(align=True)
+		row.alignment = "RIGHT"
 		row.operator(LinkSlots.bl_idname, text="..without Reset").use_reset = False
 
 
-def draw_slot_target_selector(self, context: bpy.types.Context, slot: bpy.types.ActionSlot | None = None):
+def draw_slot_target_selector(layout: bpy.types.UILayout, context: bpy.types.Context, slot: bpy.types.ActionSlot | None = None):
 	"""Gui to select a Slots target"""
-	layout: bpy.types.UILayout = self.layout
-
 	if(slot is not None):
 		active_slot: bpy.types.ActionSlot = slot
 		slot_link = find_slot_link(context.active_action, slot.handle)
@@ -144,10 +147,8 @@ def draw_slot_target_selector(self, context: bpy.types.Context, slot: bpy.types.
 		row.operator(AddSlotLink.bl_idname, icon="ADD").slot_handle = active_slot.handle
 
 
-def draw_orphan_slots(self, context: bpy.types.Context):
+def draw_orphan_slots(layout: bpy.types.UILayout, context: bpy.types.Context):
 	"""If a slot was removed, the SlotLink on the Action will remain. Remove any orphaned SlotLinks."""
-	layout: bpy.types.UILayout = self.layout
-
 	handled_slot_links = []
 	for slot_index, slot in enumerate(context.active_action.slots):
 		slot_link = find_slot_link(context.active_action, slot.handle)
@@ -169,25 +170,32 @@ def draw_orphan_slots(self, context: bpy.types.Context):
 			box.operator(RemoveSlotLink.bl_idname, icon="X").index = slot_index
 
 
-def draw_slot_link_editor(self, context: bpy.types.Context):
+def draw_slot_link_editor(layout: bpy.types.UILayout, context: bpy.types.Context):
 	"""Draw the full Slot Link editor GUI"""
-	layout: bpy.types.UILayout = self.layout
+	if(not context.preferences.addons[package_key].preferences.hide_documentation_link):
+		row = layout.row()
+		row.alignment = "RIGHT"
+		if(bpy.app.version[0] < 5 or bpy.app.version[1] < 2):
+			row.operator(OpenDocumentation.bl_idname, icon="HELP")
+		else:
+			row.link(text="Slot Link Documentation", icon="HELP", url="https://docs.stfform.at/guide/blender/slot_link.html")
 
-	row = layout.row()
-	row.alignment = "RIGHT"
-	if(bpy.app.version[0] < 5 or bpy.app.version[1] < 2):
-		row.operator(OpenDocumentation.bl_idname, icon="HELP")
-	else:
-		row.link(text="Slot Link Documentation", icon="HELP", url="https://docs.stfform.at/guide/blender/slot_link.html")
-
-	draw_reset_animation_selector(self, context)
+	draw_reset_animation_selector(layout, context)
 	layout.separator(factor=1)
-	state = draw_link_messages(self, context)
+	state = draw_link_messages(layout, context)
 
-	draw_link_buttons(self, context)
-	if(not state): return
+	draw_link_buttons(layout, context, scale=1.3)
+	if(state < 0): return
 
-	layout.template_list(SlotLinkList.bl_idname, "", context.active_action, "slots", context.active_action.slot_link, "active_index")
-	draw_slot_target_selector(self, context)
+	if(not context.preferences.addons[package_key].preferences.hide_slot_link_list):
+		layout.template_list(SlotLinkList.bl_idname, "", context.active_action, "slots", context.active_action.slot_link, "active_index")
+		draw_slot_target_selector(layout, context)
+	elif(state == 1):
+		row = layout.row()
+		row_icon = row.row()
+		row_text = row.column(align=True)
+		row_icon.label(icon="INFO_LARGE")
+		row_text.label(text="First select a Slot on the left.")
+		row_text.label(text="Then select a Target in the Slot panel")
 
-	draw_orphan_slots(self, context)
+	draw_orphan_slots(layout, context)

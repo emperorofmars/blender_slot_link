@@ -3,25 +3,16 @@ import bpy
 from .package_key import package_key
 from .misc import OpenDocumentation
 from .slot_link import AddSlotLink, RemoveSlotLink, SlotLink
-from .link_applier import LinkSlots, PrepareLinks, check_action
-
-
-def find_slot_link(action: bpy.types.Action | None, slot_handle: int) -> SlotLink | None:
-	"""Find the SlotLink on an Action based on a Slots handle"""
-	if(action):
-		for slot_link in action.slot_link.links:
-			if(slot_link.slot_handle == slot_handle):
-				return slot_link
-	return None
+from .link_applier import LinkSlots, PrepareLinks, check_action, check_slot_link_target_unique, find_slot_link
 
 
 class SlotLinkList(bpy.types.UIList):
 	"""Display the Slot Link for each Slot of an Action"""
 	bl_idname = "COLLECTION_UL_slot_link_list"
 
-	def draw_item(self, context: bpy.types.Context, layout: bpy.types.UILayout, data: bpy.types.Action, item: bpy.types.ActionSlot, icon, active_data, active_propname, index):  # pyright: ignore[reportIncompatibleMethodOverride]
+	def draw_item(self, context: bpy.types.Context, layout: bpy.types.UILayout, data: bpy.types.Action, item: bpy.types.ActionSlot, icon, active_data, active_propname, index): # pyright: ignore[reportIncompatibleMethodOverride]
 		slot_link = find_slot_link(context.active_action, item.handle)
-		if(not slot_link or not slot_link.target):
+		if(not slot_link or not slot_link.target or not check_slot_link_target_unique(data, item)):
 			layout.alert = True
 
 		split = layout.split(factor=0.45)
@@ -37,7 +28,7 @@ class SlotLinkList(bpy.types.UIList):
 
 def draw_link_messages(layout: bpy.types.UILayout, context: bpy.types.Context, only_error: bool = False) -> int:
 	"""Draw warnings"""
-	action = context.active_action
+	action: bpy.types.Action = context.active_action # pyright: ignore[reportAssignmentType]
 
 	if(action.is_action_legacy):
 		if(action.users <= 1): # good enough
@@ -50,7 +41,15 @@ def draw_link_messages(layout: bpy.types.UILayout, context: bpy.types.Context, o
 			row.label(text="Please add a new Slot!", icon="INFO")
 			return -1
 
-	# Check if all Slots have targets!
+	# Check if some Slots want to be linked to the same datablock
+	for slot in action.slots:
+		if(not check_slot_link_target_unique(action, slot)):
+			row = layout.row()
+			row.alert = True
+			row.label(text="Some Slots have duplicate Targets!", icon="WARNING_LARGE")
+			return 1
+
+	# Check if all Slots have targets
 	successes = 0
 	for slot in action.slots:
 		slot_link = find_slot_link(action, slot.handle)

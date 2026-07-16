@@ -9,6 +9,19 @@ _blender_data_subkeys = ["node_tree", "shape_keys", "compositing_node_group"]
 
 
 """
+Utils
+"""
+
+def find_slot_link(action: bpy.types.Action | None, slot_handle: int) -> SlotLink | None:
+	"""Find the SlotLink on an Action based on a Slots handle"""
+	if(action):
+		for slot_link in action.slot_link.links:
+			if(slot_link.slot_handle == slot_handle):
+				return slot_link
+	return None
+
+
+"""
 Check
 """
 
@@ -90,6 +103,25 @@ def check_action(action: bpy.types.Action) -> bool:
 				if(target_object.data and isinstance(target_object.data, bpy.types.Light)):
 					if(not has_animation_data(target_object.data) or target_object.data.animation_data.action_slot != slot):
 						return False
+	return True
+
+
+def check_slot_link_target_unique(action: bpy.types.Action, slot: bpy.types.ActionSlot) -> bool:
+	"""Check if this Slot's `target` isn't used by any other Slot with the same `target_id_type`"""
+	slot_link = find_slot_link(action, slot.handle)
+	if(not slot_link):
+		return True
+	for check_slot in action.slots:
+		if(check_slot == slot or check_slot.target_id_type != slot.target_id_type):
+			continue
+		check_slot_link = find_slot_link(action, check_slot.handle)
+		if(not check_slot_link):
+			continue
+		if(slot_link.target == check_slot_link.target):
+			if(slot.target_id_type in ["MATERIAL", "NODETREE"] and slot_link.datablock_index != check_slot_link.datablock_index):
+				continue
+			else:
+				return False
 	return True
 
 

@@ -61,7 +61,7 @@ def check_action(action: bpy.types.Action) -> bool:
 				if(target_object.material_slots and len(target_object.material_slots) > slot_link.datablock_index):
 					target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index]  # pyright: ignore[reportRedeclaration]
 					if(target_material_slot.material):
-						if(not has_animation_data(target_material_slot.material) or target_material_slot.material.animation_data.action_slot == slot):
+						if(not has_animation_data(target_material_slot.material) or target_material_slot.material.animation_data.action_slot != slot):
 							return False
 
 			case "NODETREE":

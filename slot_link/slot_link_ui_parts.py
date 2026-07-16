@@ -27,7 +27,10 @@ class SlotLinkList(bpy.types.UIList):
 		split = layout.split(factor=0.45)
 		split.label(text=f"{item.name_display} ({item.target_id_type.capitalize()})", icon_value = item.target_id_type_icon)
 		if(slot_link and slot_link.target):
-			split.label(text=slot_link.target.name, icon="RIGHTARROW")
+			target_str = slot_link.target.name
+			if(item.target_id_type in ["MATERIAL", "NODETREE"]):
+				target_str += f" [ Material {slot_link.datablock_index} ]"
+			split.label(text=target_str, icon="RIGHTARROW")
 		else:
 			split.label(text="NONE", icon="ERROR")
 

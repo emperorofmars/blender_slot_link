@@ -18,10 +18,21 @@ class SlotLinkList(bpy.types.UIList):
 		split = layout.split(factor=0.45)
 		split.label(text=f"{item.name_display} ({item.target_id_type.capitalize()})", icon_value = item.target_id_type_icon)
 		if(slot_link and slot_link.target):
-			target_str = slot_link.target.name
+			row = split.row()
+			row.label(text=slot_link.target.name, icon="RIGHTARROW")
 			if(item.target_id_type in ["MATERIAL", "NODETREE"]):
-				target_str += f" [ Material {slot_link.datablock_index} ]"
-			split.label(text=target_str, icon="RIGHTARROW")
+				row.label(icon="RIGHTARROW")
+				handled = False
+				if(slot_link.target.material_slots and len(slot_link.target.material_slots) > slot_link.datablock_index):
+					target_material_slot: bpy.types.MaterialSlot = slot_link.target.material_slots[slot_link.datablock_index]  # pyright: ignore[reportRedeclaration]
+					if(item.target_id_type == "MATERIAL" and target_material_slot.material):
+						row.label(text=target_material_slot.material.name, icon_value=item.target_id_type_icon)
+						handled = True
+					elif(item.target_id_type == "NODETREE" and target_material_slot.material and target_material_slot.material.node_tree):
+						handled = True
+						row.label(text=target_material_slot.material.node_tree.name, icon_value=item.target_id_type_icon)
+				if(not handled):
+					row.label(text=f"[ Material {slot_link.datablock_index} ]", icon_value=item.target_id_type_icon)
 		else:
 			split.label(text="NONE", icon="ERROR")
 

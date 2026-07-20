@@ -1,3 +1,4 @@
+#pyright: reportArgumentType=none
 import bpy
 
 from .package_key import package_key
@@ -61,7 +62,7 @@ class SlotLinkEditor(bpy.types.Panel):
 		self.layout.label(icon="DECORATE_LINKED")
 
 	def draw(self, context: bpy.types.Context):
-		draw_slot_link_editor(self.layout, context) # pyright: ignore[reportArgumentType]
+		draw_slot_link_editor(self.layout, context)
 
 
 def register():

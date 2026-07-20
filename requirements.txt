@@ -1,4 +1,4 @@
 watchdog>=6.0.0
-fake-bpy-module;
+fake-bpy-module-latest;
 numpy>=2.4.4
 pathspec>=1.0.4

@@ -1,7 +1,6 @@
-from .slot_link.misc import OpenDocumentation
-from .slot_link import package_key
-from . import auto_load
 import bpy
+from . import auto_load
+from .slot_link import package_key
 
 
 package_key.package_key = __package__
@@ -10,7 +9,7 @@ auto_load.init()
 
 
 class SlotLinkAddonPreferences(bpy.types.AddonPreferences):
-	bl_idname = package_key.package_key  # pyright: ignore[reportAssignmentType]
+	bl_idname = package_key.package_key # pyright: ignore[reportAssignmentType]
 
 	use_separate_editor: bpy.props.BoolProperty(name="Move Slot Link editor to separate Panel", default=False)
 	hide_slot_link_list: bpy.props.BoolProperty(name="Hide the list of Slot Links (Use the Slot Panel instead)", default=False)
@@ -21,7 +20,7 @@ class SlotLinkAddonPreferences(bpy.types.AddonPreferences):
 		layout = self.layout
 		layout.use_property_split = True
 		if(bpy.app.version[0] < 5 or bpy.app.version[1] < 2):
-			layout.operator(OpenDocumentation.bl_idname, icon="HELP")
+			layout.operator("wm.url_open", text="Slot Link Documentation", icon="HELP").url = "https://docs.stfform.at/guide/blender/slot_link.html"
 		else:
 			layout.link(text="Slot Link Documentation", icon="HELP", url="https://docs.stfform.at/guide/blender/slot_link.html")
 

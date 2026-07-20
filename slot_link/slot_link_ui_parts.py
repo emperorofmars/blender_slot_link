@@ -1,17 +1,18 @@
 import bpy
 
 from .package_key import package_key
-from .misc import OpenDocumentation
-from .slot_link import ActionSlotLink, AddSlotLink, RemoveSlotLink, SlotLink
-from .link_applier import LinkSlots, PrepareLinks, check_action, check_slot_link_target_unique, find_slot_link
+from .slot_link import ActionSlotLink, AddSlotLink, RemoveSlotLink, find_slot_link
+from .link_applier import LinkSlots, PrepareLinks, check_action, check_slot_link_target_unique
+
+__all__ = ["draw_link_messages", "draw_reset_animation_selector", "draw_link_buttons", "draw_slot_target_selector", "draw_orphan_slots", "draw_slot_link_editor"]
 
 
 class SlotLinkList(bpy.types.UIList):
 	"""Display the Slot Link for each Slot of an Action"""
 	bl_idname = "COLLECTION_UL_slot_link_list"
 
-	def draw_item(self, context: bpy.types.Context, layout: bpy.types.UILayout, data: bpy.types.Action, item: bpy.types.ActionSlot, icon: int, active_data: ActionSlotLink, active_property: str, index, flt_flag: int | None): # pyright: ignore[reportIncompatibleMethodOverride]
-		slot_link = find_slot_link(context.active_action, item.handle)
+	def draw_item(self, context: bpy.types.Context, layout: bpy.types.UILayout, data: bpy.types.Action, item: bpy.types.ActionSlot, icon: int, active_data: ActionSlotLink, active_property: str, index, flt_flag: int | None):
+		slot_link = find_slot_link(context.active_action, item.handle) # pyright: ignore[reportArgumentType]
 		if(not slot_link or not slot_link.target or not check_slot_link_target_unique(data, item)):
 			layout.alert = True
 
@@ -28,7 +29,7 @@ class SlotLinkList(bpy.types.UIList):
 			row.label(icon="RIGHTARROW")
 			handled = False
 			if(slot_link.target.material_slots and len(slot_link.target.material_slots) > slot_link.datablock_index):
-				target_material_slot: bpy.types.MaterialSlot = slot_link.target.material_slots[slot_link.datablock_index]  # pyright: ignore[reportRedeclaration]
+				target_material_slot: bpy.types.MaterialSlot = slot_link.target.material_slots[slot_link.datablock_index]
 				if(item.target_id_type == "MATERIAL" and target_material_slot.material):
 					row.label(text=target_material_slot.material.name, icon_value=item.target_id_type_icon)
 					handled = True
@@ -75,7 +76,7 @@ def draw_link_messages(layout: bpy.types.UILayout, context: bpy.types.Context, o
 		return 1
 
 	# Check whether this Action is linked everywhere state
-	if(not only_error and not check_action(action)): # pyright: ignore[reportArgumentType]
+	if(not only_error and not check_action(action)):
 		row = layout.row()
 		row.alert = True
 		row.label(text="Not Linked!", icon="WARNING_LARGE")
@@ -125,10 +126,10 @@ def draw_slot_target_selector(layout: bpy.types.UILayout, context: bpy.types.Con
 	"""Gui to select a Slots target"""
 	if(slot is not None):
 		active_slot: bpy.types.ActionSlot = slot
-		slot_link = find_slot_link(context.active_action, slot.handle)
+		slot_link = find_slot_link(context.active_action, slot.handle) # pyright: ignore[reportArgumentType]
 	elif(len(context.active_action.slots) > context.active_action.slot_link.active_index):
 		active_slot: bpy.types.ActionSlot = context.active_action.slots[context.active_action.slot_link.active_index]
-		slot_link = find_slot_link(context.active_action, active_slot.handle)
+		slot_link = find_slot_link(context.active_action, active_slot.handle) # pyright: ignore[reportArgumentType]
 	else:
 		return
 
@@ -166,7 +167,7 @@ def draw_orphan_slots(layout: bpy.types.UILayout, context: bpy.types.Context):
 	"""If a slot was removed, the SlotLink on the Action will remain. Remove any orphaned SlotLinks."""
 	handled_slot_links = []
 	for slot_index, slot in enumerate(context.active_action.slots):
-		slot_link = find_slot_link(context.active_action, slot.handle)
+		slot_link = find_slot_link(context.active_action, slot.handle) # pyright: ignore[reportArgumentType]
 		if(slot_link):
 			handled_slot_links.append(slot_link)
 
@@ -191,7 +192,7 @@ def draw_slot_link_editor(layout: bpy.types.UILayout, context: bpy.types.Context
 		row = layout.row()
 		row.alignment = "RIGHT"
 		if(bpy.app.version[0] < 5 or bpy.app.version[1] < 2):
-			row.operator(OpenDocumentation.bl_idname, icon="HELP")
+			row.operator("wm.url_open", text="Slot Link Documentation", icon="HELP").url = "https://docs.stfform.at/guide/blender/slot_link.html"
 		else:
 			row.link(text="Slot Link Documentation", icon="HELP", url="https://docs.stfform.at/guide/blender/slot_link.html")
 

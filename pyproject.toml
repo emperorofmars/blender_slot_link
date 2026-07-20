@@ -1,4 +1,3 @@
-
 [tool.pyright]
 include = [
 	"."
@@ -10,19 +9,22 @@ exclude = [
 	"docs",
 	"packages",
 	"**/__pycache__",
+	"**/node_modules",
+	"**/.*",
 ]
 ignore = [
-	"auto_load.py"
+	"auto_load.py",
 ]
 defineConstant = { DEBUG = true }
-pythonVersion = "3.13"
+pythonVersion = "3.14"
 
 useLibraryCodeForTypes = true
 typeCheckingMode = "standard"
+reportMissingModuleSource = "none"
 reportInvalidTypeForm = "none"
-reportAttributeAccessIssue = "information"
-reportOptionalMemberAccess = "information"
-
+reportAttributeAccessIssue = "none"
+reportOptionalMemberAccess = "none"
+reportIncompatibleMethodOverride = "none"
 
 [tool.ruff]
 ignore = [

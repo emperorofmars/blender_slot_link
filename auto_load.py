@@ -21,7 +21,6 @@ ignore_modules = [
 	"bpydev",
 	"build_extension",
 	"testsuite",
-	"stf_blender_module_template",
 ]
 
 
@@ -35,24 +34,40 @@ def init():
 
 def register():
 	for cls in ordered_classes:
-		bpy.utils.register_class(cls)
+		for ignore in ignore_modules:
+			if(cls.__module__.startswith(__package__ + "." + ignore)):
+				break
+		else:
+			bpy.utils.register_class(cls)
 
 	for module in modules:
 		if module.__name__ == __name__:
 			continue
 		if hasattr(module, "register"):
-			module.register()
+			for ignore in ignore_modules:
+				if(module.__name__.startswith(__package__ + "." + ignore)):
+					break
+			else:
+				module.register()
 
 
 def unregister():
 	for cls in reversed(ordered_classes):
-		bpy.utils.unregister_class(cls)
+		for ignore in ignore_modules:
+			if(ignore in cls.__module__):
+				break
+		else:
+			bpy.utils.unregister_class(cls)
 
 	for module in modules:
 		if module.__name__ == __name__:
 			continue
 		if hasattr(module, "unregister"):
-			module.unregister()
+			for ignore in ignore_modules:
+				if(module.__name__.startswith(__package__ + "." + ignore)):
+					break
+			else:
+				module.unregister()
 
 
 # Import modules
@@ -62,6 +77,7 @@ def unregister():
 def get_all_submodules(directory):
 	return list(iter_submodules(directory, __package__))
 
+
 def iter_submodules(path, package_name):
 	for name in sorted(iter_submodule_names(path)):
 		for ignore in ignore_modules:
@@ -69,6 +85,7 @@ def iter_submodules(path, package_name):
 				break
 		else:
 			yield importlib.import_module("." + name, package_name)
+
 
 def iter_submodule_names(path, root=""):
 	for _, module_name, is_package in pkgutil.iter_modules([str(path)]):

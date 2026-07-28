@@ -99,19 +99,17 @@ def check_action(action: bpy.types.Action) -> bool:
 	return True
 
 
+def _slot_targets_unique(target_id_type: str, a: SlotLinkTarget, b: SlotLinkTarget) -> bool:
+	return a == b or a.target != b.target or target_id_type in ["MATERIAL", "NODETREE"] and a.datablock_index != b.datablock_index
+
 def check_slot_link_target_unique(action: bpy.types.Action, slot: bpy.types.ActionSlot, link_target: SlotLinkTarget) -> bool:
 	"""Check if this Slot's `link_target` isn't used by any other Slot with the same `target_id_type` or by another of its own targets"""
 	slot_link = find_slot_link(action, slot.handle)
 	if(not slot_link):
 		return True
 	for check_target in slot_link.targets:
-		if(link_target == check_target):
-			continue
-		if(link_target.target == check_target.target):
-			if(slot.target_id_type in ["MATERIAL", "NODETREE"] and link_target.datablock_index != check_target.datablock_index):
-				continue
-			else:
-				return False
+		if(not _slot_targets_unique(slot.target_id_type, link_target, check_target)):
+			return False
 	for check_slot in action.slots:
 		if(check_slot == slot or check_slot.target_id_type != slot.target_id_type):
 			continue
@@ -119,13 +117,9 @@ def check_slot_link_target_unique(action: bpy.types.Action, slot: bpy.types.Acti
 		if(not check_slot_link):
 			continue
 		for check_target in check_slot_link.targets:
-			if(link_target.target == check_target.target):
-				if(slot.target_id_type in ["MATERIAL", "NODETREE"] and link_target.datablock_index != check_target.datablock_index):
-					continue
-				else:
-					return False
+			if(not _slot_targets_unique(slot.target_id_type, link_target, check_target)):
+				return False
 	return True
-
 
 def check_slot_link_all_targets_unique(action: bpy.types.Action, slot: bpy.types.ActionSlot) -> bool:
 	"""Check if this Slot's `target` isn't used by any other Slot with the same `target_id_type`"""
@@ -133,29 +127,9 @@ def check_slot_link_all_targets_unique(action: bpy.types.Action, slot: bpy.types
 	if(not slot_link):
 		return True
 	for link_target in slot_link.targets:
-		for check_target in slot_link.targets:
-			if(link_target == check_target):
-				continue
-			if(link_target.target == check_target.target):
-				if(slot.target_id_type in ["MATERIAL", "NODETREE"] and link_target.datablock_index != check_target.datablock_index):
-					continue
-				else:
-					return False
-	for check_slot in action.slots:
-		if(check_slot == slot or check_slot.target_id_type != slot.target_id_type):
-			continue
-		check_slot_link = find_slot_link(action, check_slot.handle)
-		if(not check_slot_link):
-			continue
-		for link_target in slot_link.targets:
-			for check_target in check_slot_link.targets:
-				if(link_target.target == check_target.target):
-					if(slot.target_id_type in ["MATERIAL", "NODETREE"] and link_target.datablock_index != check_target.datablock_index):
-						continue
-					else:
-						return False
+		if(not check_slot_link_target_unique(action, slot, link_target)):
+			return False
 	return True
-
 
 ## Prepare animation_data
 

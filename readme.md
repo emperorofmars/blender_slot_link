@@ -28,10 +28,11 @@ Please open issues for any bugs or misbehavior you notice. Feel free to open iss
 ## Development Setup
 * Have an up to date version of Blender installed.
 * Either:
-	* Use `bpydev.py` included in this repository.
+	* Use `bpydev.py` included in this repository.\
+		Run `python bpydev.py -h` for more info.
 	* Use VSCode with the [recommended extensions](./.vscode/extensions.json).\
 		The most important one is [Blender VS Code](https://github.com/JacquesLucke/blender_vscode).
-* Create a Python 3.13 venv in the repo directory.
+* Create a Python 3.14 venv in the repo directory.
 * Inside the venv run:
 	``` sh
 	pip install -r requirements.txt

@@ -76,7 +76,7 @@ def draw_link_messages(layout: bpy.types.UILayout, action: bpy.types.Action, onl
 					valid_material = False
 				elif(not slot_link.target.material_slots[slot_link.datablock_index].material):
 					valid_material = False
-				elif(slot.target_id_type == "NODETREE" and slot_link.target.material_slots[slot_link.datablock_index].material.node_tree):
+				elif(slot.target_id_type == "NODETREE" and not slot_link.target.material_slots[slot_link.datablock_index].material.node_tree):
 					valid_material = False
 				if(not valid_material):
 					row = layout.row()

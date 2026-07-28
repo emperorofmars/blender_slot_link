@@ -1,8 +1,10 @@
 import bpy
 
-from .package_key import package_key
-from .slot_link import ActionSlotLink, AddSlotLink, RemoveSlotLink, find_slot_link
-from .link_applier import LinkSlots, PrepareLinks, check_action, check_slot_link_target_unique
+from .package_key import get_preferences
+from .slot_link import ActionSlotLink, find_slot_link
+from .slot_link_ops import AddSlotLink, RemoveSlotLink, LinkSlots, PrepareLinks
+from .link_applier import check_action, check_slot_link_target_unique
+
 
 __all__ = ["draw_link_messages", "draw_reset_animation_selector", "draw_link_buttons", "draw_slot_target_selector", "draw_orphan_slots", "draw_slot_link_editor"]
 
@@ -17,7 +19,7 @@ class SlotLinkList(bpy.types.UIList):
 			layout.alert = True
 
 		split = layout.split(factor=0.45)
-		split.label(text=f"{item.name_display} ({item.target_id_type.capitalize()})", icon_value = item.target_id_type_icon)
+		split.label(text=f"{item.name_display} ({item.target_id_type.capitalize()})", icon_value=item.target_id_type_icon)
 
 		if(not slot_link or not slot_link.target):
 			split.label(text="NONE", icon="ERROR")
@@ -37,12 +39,12 @@ class SlotLinkList(bpy.types.UIList):
 					handled = True
 					row.label(text=target_material_slot.material.node_tree.name, icon_value=item.target_id_type_icon)
 			if(not handled):
-				row.label(text=f"[ Material {slot_link.datablock_index} ]", icon_value=item.target_id_type_icon)
+				row.alert = True
+				row.label(text=f"[ Material {slot_link.datablock_index} ]", icon="ERROR")
 
 
-def draw_link_messages(layout: bpy.types.UILayout, context: bpy.types.Context, only_error: bool = False) -> int:
+def draw_link_messages(layout: bpy.types.UILayout, action: bpy.types.Action, only_error: bool = False) -> int:
 	"""Draw warnings"""
-	action: bpy.types.Action = context.active_action # pyright: ignore[reportAssignmentType]
 
 	if(action.is_action_legacy):
 		if(action.users <= 1): # good enough
@@ -68,6 +70,19 @@ def draw_link_messages(layout: bpy.types.UILayout, context: bpy.types.Context, o
 	for slot in action.slots:
 		slot_link = find_slot_link(action, slot.handle)
 		if(slot_link and slot_link.target): # TODO check if the target supports all animated properties
+			if(slot.target_id_type in ["MATERIAL", "NODETREE"]):
+				valid_material = True
+				if(slot_link.target.material_slots and len(slot_link.target.material_slots) <= slot_link.datablock_index):
+					valid_material = False
+				elif(not slot_link.target.material_slots[slot_link.datablock_index].material):
+					valid_material = False
+				elif(slot.target_id_type == "NODETREE" and slot_link.target.material_slots[slot_link.datablock_index].material.node_tree):
+					valid_material = False
+				if(not valid_material):
+					row = layout.row()
+					row.alert = True
+					row.label(text="Some Slots have invalid Material indices!", icon="WARNING_LARGE")
+					return 1
 			successes += 1
 	if(successes < len(action.slots)):
 		row = layout.row()
@@ -84,31 +99,31 @@ def draw_link_messages(layout: bpy.types.UILayout, context: bpy.types.Context, o
 	return 0
 
 
-def draw_reset_animation_selector(layout: bpy.types.UILayout, context: bpy.types.Context):
+def draw_reset_animation_selector(layout: bpy.types.UILayout, action: bpy.types.Action):
 	"""Mark the Action as a reset animation, or select a reset animation"""
 	layout = layout.column(align=True)
 
 	# Reset animation
-	if(not context.active_action.slot_link.reset_animation):
-		layout.prop(context.active_action.slot_link, "is_reset_animation")
-	if(not context.active_action.slot_link.is_reset_animation):
-		layout.prop(context.active_action.slot_link, "reset_animation")
-		if(context.active_action.slot_link.reset_animation and len(context.active_action.slot_link.reset_animation.slot_link.links) == 0):
+	if(not action.slot_link.reset_animation):
+		layout.prop(action.slot_link, "is_reset_animation")
+	if(not action.slot_link.is_reset_animation):
+		layout.prop(action.slot_link, "reset_animation")
+		if(action.slot_link.reset_animation and len(action.slot_link.reset_animation.slot_link.links) == 0):
 			row = layout.row()
 			row.alert = True
 			row.label(text="The Reset Animation has no Targets!", icon="ERROR")
 
 
-def draw_link_buttons(layout: bpy.types.UILayout, context: bpy.types.Context, only_one_button: bool = False, scale: float = 1):
+def draw_link_buttons(layout: bpy.types.UILayout, action: bpy.types.Action, only_one_button: bool = False, scale: float = 1):
 	"""The main 'Link Slots' buttons"""
 	# Prepare legacy/newly created Action
-	if(context.active_action.is_action_legacy):
+	if(action.is_action_legacy):
 		row = layout.row()
 		row.alert = True
 		layout.operator(PrepareLinks.bl_idname)
 		return
 
-	state = check_action(context.active_action) # pyright: ignore[reportArgumentType]
+	state = check_action(action)
 
 	# Main link button
 	row = layout.row(align=True)
@@ -116,63 +131,110 @@ def draw_link_buttons(layout: bpy.types.UILayout, context: bpy.types.Context, on
 	row.alert = state == 0
 	row.scale_x = row.scale_y = scale
 	row.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED").use_reset = True
-	if(not only_one_button and context.active_action.slot_link.reset_animation):
+	if(not only_one_button and action.slot_link.reset_animation):
 		row = row.row(align=True)
 		row.alignment = "RIGHT"
 		row.operator(LinkSlots.bl_idname, text="..without Reset").use_reset = False
 
 
-def draw_slot_target_selector(layout: bpy.types.UILayout, context: bpy.types.Context, slot: bpy.types.ActionSlot | None = None):
+def draw_slot_target_selector(layout: bpy.types.UILayout, action: bpy.types.Action, slot: bpy.types.ActionSlot | None = None, is_slot_panel: bool = False, compact_layout: bool = False):
 	"""Gui to select a Slots target"""
 	if(slot is not None):
 		active_slot: bpy.types.ActionSlot = slot
-		slot_link = find_slot_link(context.active_action, slot.handle) # pyright: ignore[reportArgumentType]
-	elif(len(context.active_action.slots) > context.active_action.slot_link.active_index):
-		active_slot: bpy.types.ActionSlot = context.active_action.slots[context.active_action.slot_link.active_index]
-		slot_link = find_slot_link(context.active_action, active_slot.handle) # pyright: ignore[reportArgumentType]
+		slot_link = find_slot_link(action, slot.handle)
+	elif(len(action.slots) > action.slot_link.active_index):
+		active_slot: bpy.types.ActionSlot = action.slots[action.slot_link.active_index]
+		slot_link = find_slot_link(action, active_slot.handle)
 	else:
 		return
 
+	if(not is_slot_panel):
+		layout.label(text=f"{active_slot.name_display} ({active_slot.target_id_type.capitalize()}):", icon_value=active_slot.target_id_type_icon)
+
 	if(slot_link):
-		layout.use_property_split = True
-		col = layout.column()
-		if(not slot_link.target):
-			col.alert = True
-		col.prop_search(slot_link, "target", bpy.data, "objects", icon="RIGHTARROW")
-		if(not slot_link.target):
-			split = col.split(factor=0.4)
-			_ = split.row()
-			split.label(text="Invalid Target", icon="WARNING_LARGE")
+		if(compact_layout):
+			layout.use_property_split = False
 
-		if(active_slot.target_id_type in ["MATERIAL", "NODETREE"] and slot_link.target):
-			col = layout.column()
-			if(slot_link.datablock_index >= len(slot_link.target.data.materials)):
-				col.alert = True
+			row = layout.row()
+			row.label(text="Target")
+			if(slot_link.target and active_slot.target_id_type in ["MATERIAL", "NODETREE"]):
+				row.label(text="Material Index")
 
-			col.prop(slot_link, "datablock_index", text="Material Index")
+			if(not slot_link.target):
+				layout.alert = True
+			elif(active_slot.target_id_type in ["MATERIAL", "NODETREE"] and slot_link.datablock_index >= len(slot_link.target.data.materials)):
+				layout.alert = True
+			elif(not check_slot_link_target_unique(action, active_slot)):
+				layout.alert = True
 
-			split = col.split(factor=0.4)
-			_ = split.row()
-			if(slot_link.datablock_index >= len(slot_link.target.data.materials)):
-				split.label(text="Invalid Material Index", icon="WARNING_LARGE")
-			else:
-				split.label(text=slot_link.target.data.materials[slot_link.datablock_index].name, icon="MATERIAL_DATA")
+			selector_layout = layout.row(align=True)
+			if(not slot_link.target):
+				selector_layout.alert = True
+
+			selector_layout.prop_search(slot_link, "target", bpy.data, "objects", text="", icon="RIGHTARROW")
+
+			if(slot_link.target and active_slot.target_id_type in ["MATERIAL", "NODETREE"]):
+				if(slot_link.datablock_index >= len(slot_link.target.data.materials)):
+					selector_layout.alert = True
+				selector_layout.prop(slot_link, "datablock_index", text=(slot_link.target.data.materials[slot_link.datablock_index].name if slot_link.datablock_index < len(slot_link.target.data.materials) else "Invalid Material Index"))
+
+			if(not slot_link.target):
+				layout.label(text="Invalid Target", icon="WARNING_LARGE")
+			elif(active_slot.target_id_type in ["MATERIAL", "NODETREE"] and slot_link.datablock_index >= len(slot_link.target.data.materials)):
+				layout.label(text="Invalid Material Index", icon="WARNING_LARGE")
+			elif(not check_slot_link_target_unique(action, active_slot)):
+				layout.label(text="Duplicate Target!", icon="WARNING_LARGE")
+
+		else:
+			layout.use_property_split = True
+
+			if(not slot_link.target):
+				layout.alert = True
+			elif(active_slot.target_id_type in ["MATERIAL", "NODETREE"] and slot_link.datablock_index >= len(slot_link.target.data.materials)):
+				layout.alert = True
+			elif(not check_slot_link_target_unique(action, active_slot)):
+				layout.alert = True
+
+			selector_layout = layout.column(align=True)
+			if(not slot_link.target):
+				selector_layout.alert = True
+
+			selector_layout.prop_search(slot_link, "target", bpy.data, "objects", icon="RIGHTARROW")
+			if(not slot_link.target):
+				selector_layout.label(text="Invalid Target", icon="WARNING_LARGE")
+
+			if(slot_link.target and active_slot.target_id_type in ["MATERIAL", "NODETREE"]):
+				if(slot_link.datablock_index >= len(slot_link.target.data.materials)):
+					selector_layout.alert = True
+
+				selector_layout.prop(slot_link, "datablock_index", text="Material Index")
+				split = selector_layout.split(factor=0.4)
+				split.row()
+				row = split.row()
+				if(slot_link.datablock_index < len(slot_link.target.data.materials)):
+					row.label(text=slot_link.target.data.materials[slot_link.datablock_index].name, icon="MATERIAL")
+				else:
+					row.alert = True
+					row.label(text="Invalid Material Index", icon="ERROR")
+
+			if(not check_slot_link_target_unique(action, active_slot)):
+				selector_layout.label(text="Duplicate Target!", icon="WARNING_LARGE")
 	else:
 		row = layout.row()
 		row.alert = True
 		row.operator(AddSlotLink.bl_idname, icon="ADD").slot_handle = active_slot.handle
 
 
-def draw_orphan_slots(layout: bpy.types.UILayout, context: bpy.types.Context):
+def draw_orphan_slots(layout: bpy.types.UILayout, action: bpy.types.Action):
 	"""If a slot was removed, the SlotLink on the Action will remain. Remove any orphaned SlotLinks."""
 	handled_slot_links = []
-	for slot_index, slot in enumerate(context.active_action.slots):
-		slot_link = find_slot_link(context.active_action, slot.handle) # pyright: ignore[reportArgumentType]
+	for slot_index, slot in enumerate(action.slots):
+		slot_link = find_slot_link(action, slot.handle)
 		if(slot_link):
 			handled_slot_links.append(slot_link)
 
 	orphan_slot_links = []
-	for slot_index, slot_link in enumerate(context.active_action.slot_link.links):
+	for slot_index, slot_link in enumerate(action.slot_link.links):
 		if(slot_link not in handled_slot_links):
 			orphan_slot_links.append((slot_index, slot_link))
 
@@ -186,9 +248,9 @@ def draw_orphan_slots(layout: bpy.types.UILayout, context: bpy.types.Context):
 			box.operator(RemoveSlotLink.bl_idname, icon="X").index = slot_index
 
 
-def draw_slot_link_editor(layout: bpy.types.UILayout, context: bpy.types.Context):
+def draw_slot_link_editor(layout: bpy.types.UILayout, action: bpy.types.Action):
 	"""Draw the full Slot Link editor GUI"""
-	if(not context.preferences.addons[package_key].preferences.hide_documentation_link):
+	if(not get_preferences().hide_documentation_link):
 		row = layout.row()
 		row.alignment = "RIGHT"
 		if(bpy.app.version[0] < 5 or bpy.app.version[1] < 2):
@@ -196,16 +258,16 @@ def draw_slot_link_editor(layout: bpy.types.UILayout, context: bpy.types.Context
 		else:
 			row.link(text="Slot Link Documentation", icon="HELP", url="https://docs.stfform.at/guide/blender/slot_link.html")
 
-	draw_reset_animation_selector(layout, context)
+	draw_reset_animation_selector(layout, action)
 	layout.separator(factor=1)
-	state = draw_link_messages(layout, context)
+	state = draw_link_messages(layout, action)
 
-	draw_link_buttons(layout, context, scale=1.3)
+	draw_link_buttons(layout, action, scale=1.3)
 	if(state < 0): return
 
-	if(not context.preferences.addons[package_key].preferences.hide_slot_link_list):
-		layout.template_list(SlotLinkList.bl_idname, "", context.active_action, "slots", context.active_action.slot_link, "active_index")
-		draw_slot_target_selector(layout, context)
+	if(not get_preferences().hide_slot_link_list):
+		layout.template_list(SlotLinkList.bl_idname, "", action, "slots", action.slot_link, "active_index")
+		draw_slot_target_selector(layout, action)
 	elif(state == 1):
 		row = layout.row()
 		row_icon = row.row()
@@ -214,4 +276,4 @@ def draw_slot_link_editor(layout: bpy.types.UILayout, context: bpy.types.Context
 		row_text.label(text="First select a Slot on the left.")
 		row_text.label(text="Then select a Target in the Slot panel")
 
-	draw_orphan_slots(layout, context)
+	draw_orphan_slots(layout, action)

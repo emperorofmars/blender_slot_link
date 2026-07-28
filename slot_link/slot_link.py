@@ -1,6 +1,7 @@
 import bpy
 
-__all__ = ["SlotLink", "ActionSlotLink", "AddSlotLink", "RemoveSlotLink", "find_slot_link"]
+
+__all__ = ["SlotLink", "ActionSlotLink", "find_slot_link"]
 
 
 def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
@@ -66,9 +67,9 @@ class SlotLink(bpy.types.PropertyGroup):
 	"""
 	Links an Actions Slot to a target `bpy.types.Object`.
 
-	If the Slot has a `target_id_type` of i.e. `KEY`, it means this link is targeting the skape-keys of a mesh that is instantiated on the `target` object.
+	If the Slot has a `target_id_type` of i.e. `KEY`, it means this link is targeting the shape-keys of a mesh that is instantiated on that objects `data`.
 
-	`datablock_index` is used in case the Slot has a `target_id_type` of `MATERIAL` for example. Then the index points to the instantiated meshes material index.
+	`datablock_index` is used in case the Slot has a `target_id_type` of `MATERIAL` for example. Then the index points to the instantiated meshes material-slot index.
 	"""
 	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1)
 	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="The Object this Slot should animate", poll=_slot_link_poll)
@@ -90,47 +91,7 @@ class ActionSlotLink(bpy.types.PropertyGroup):
 	active_index: bpy.props.IntProperty(name="Active Slot Link", options=set())
 
 	is_reset_animation: bpy.props.BoolProperty(name="Is Reset-Animation", description="Use this Action to reset every property to a desired default state", default=False)
-	reset_animation: bpy.props.PointerProperty(type=bpy.types.Action, name="Reset Animation", description="On 'Link Slots', the Reset Animation will be used to reset the state of the entire scene", poll=lambda self, action: bpy.context.active_action != action and action.slot_link.is_reset_animation, options=set())
-
-
-class AddSlotLink(bpy.types.Operator):
-	"""Setup an animation target for this Action-Slot"""
-	bl_idname = "slot_link.add"
-	bl_label = "Setup Slot Link"
-	bl_category = "anim"
-	bl_options = {"REGISTER", "UNDO"}
-
-	slot_handle: bpy.props.IntProperty(default=-1)
-
-	@classmethod
-	def poll(cls, context: bpy.types.Context):
-		return hasattr(context, "active_action") and context.active_action is not None
-
-	def execute(self, context: bpy.types.Context) -> set:
-		for link in context.active_action.slot_link.links:
-			if(link.slot_handle == self.slot_handle):
-				return {"CANCELLED"}
-		slot_link = context.active_action.slot_link.links.add()
-		slot_link.slot_handle = self.slot_handle
-		return {"FINISHED"}
-
-
-class RemoveSlotLink(bpy.types.Operator):
-	"""Remove orphaned link"""
-	bl_idname = "slot_link.remove"
-	bl_label = "Remove Slot Link"
-	bl_category = "anim"
-	bl_options = {"REGISTER", "UNDO"}
-
-	index: bpy.props.IntProperty(default=-1)
-
-	@classmethod
-	def poll(cls, context: bpy.types.Context):
-		return hasattr(context, "active_action") and context.active_action is not None and len(context.active_action.slot_link.links) > 0
-
-	def execute(self, context: bpy.types.Context) -> set:
-		context.active_action.slot_link.links.remove(self.index)
-		return {"FINISHED"}
+	reset_animation: bpy.props.PointerProperty(type=bpy.types.Action, name="Reset Animation", description="On 'Link Slots', the reset-animation will be used to reset the state of the entire scene", poll=lambda self, action: bpy.context.active_action != action and action.slot_link.is_reset_animation, options=set())
 
 
 def find_slot_link(action: bpy.types.Action, slot_handle: int) -> SlotLink | None:

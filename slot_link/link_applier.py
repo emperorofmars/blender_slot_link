@@ -2,11 +2,11 @@ import bpy
 
 from .slot_link import SlotLink, find_slot_link
 
-__all__ = ["check_action", "check_slot_link_target_unique", "LinkSlots", "PrepareLinks", "ClearScene"]
+__all__ = ["check_action", "check_slot_link_target_unique", "prepare_all_data_blocks", "link_slots"]
 
 
 # why u no polymorphism?
-_blender_data_keys = ["actions", "armatures", "brushes", "cache_files", "cameras", "collections", "curves", "fonts", "grease_pencils", "images", "lattices", "libraries", "lights", "lightprobes", "linestyles", "masks", "materials", "meshes", "metaballs", "movieclips", "node_groups", "objects", "paint_curves", "palettes", "particles", "pointclouds", "scenes", "screens", "sounds", "speakers", "texts", "textures", "volumes", "window_managers", "workspaces", "worlds"]
+_blender_data_keys = ["armatures", "brushes", "cache_files", "cameras", "collections", "curves", "fonts", "grease_pencils", "images", "lattices", "libraries", "lights", "lightprobes", "linestyles", "masks", "materials", "meshes", "metaballs", "movieclips", "node_groups", "objects", "paint_curves", "palettes", "particles", "pointclouds", "scenes", "screens", "sounds", "speakers", "texts", "textures", "volumes", "window_managers", "workspaces", "worlds"]
 _blender_data_subkeys = ["node_tree", "shape_keys", "compositing_node_group"]
 
 
@@ -49,7 +49,12 @@ def check_action(action: bpy.types.Action) -> bool:
 
 		target_object: bpy.types.Object = slot_link.target
 		if(not target_object):
+			if(len(slot.users()) > 0):
+				return False
 			continue # The slot is still linked correctly
+
+		if(len(slot.users()) > 1):
+			return False
 
 		# why u no polymorphism?
 		match(slot.target_id_type):
@@ -59,7 +64,7 @@ def check_action(action: bpy.types.Action) -> bool:
 
 			case "MATERIAL":
 				if(target_object.material_slots and len(target_object.material_slots) > slot_link.datablock_index):
-					target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index]  # pyright: ignore[reportRedeclaration]
+					target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index] # pyright: ignore[reportRedeclaration]
 					if(target_material_slot.material):
 						if(not _has_animation_data(target_material_slot.material) or target_material_slot.material.animation_data.action_slot != slot):
 							return False
@@ -127,7 +132,7 @@ def _prepare_data_block(action: bpy.types.Action | None, blender_data_block: bpy
 				blender_data_block.animation_data.action = action
 				blender_data_block.animation_data.action_slot = None
 
-def _prepare_all_data_blocks(action: bpy.types.Action | None):
+def prepare_all_data_blocks(action: bpy.types.Action | None):
 	"""
 	Clear the `animation_data` on all Blender IDs.
 
@@ -144,34 +149,6 @@ def _prepare_all_data_blocks(action: bpy.types.Action | None):
 				if(hasattr(thing, sub_key)):
 					_prepare_data_block(action, getattr(thing, sub_key))
 	return True
-
-class PrepareLinks(bpy.types.Operator):
-	"""Link the Action to everything in the Scene.
-	Prevents any other Actions from being linked anywhere"""
-	bl_idname = "slot_link.prepare"
-	bl_label = "Prepare"
-	bl_category = "anim"
-	bl_options = {"REGISTER", "UNDO"}
-
-	@classmethod
-	def poll(cls, context: bpy.types.Context):
-		return hasattr(context, "active_action") and context.active_action is not None
-
-	def execute(self, context: bpy.types.Context) -> set:
-		_prepare_all_data_blocks(context.active_action)
-		return {"FINISHED"}
-
-
-class ClearScene(bpy.types.Operator):
-	"""Clear the Scene of any animation data"""
-	bl_idname = "slot_link.clear_scene"
-	bl_label = "Clear Scene"
-	bl_category = "anim"
-	bl_options = {"REGISTER", "UNDO"}
-
-	def execute(self, context: bpy.types.Context) -> set:
-		_prepare_all_data_blocks(None)
-		return {"FINISHED"}
 
 
 ## Link
@@ -204,42 +181,37 @@ def _link_slot(action: bpy.types.Action, slot: bpy.types.ActionSlot, slot_link: 
 				target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index]
 				if(target_material_slot.material):
 					_set_animation_data(target_material_slot.material, action, slot)
-					return
 
 		case "NODETREE":
 			if(target_object.material_slots and len(target_object.material_slots) > slot_link.datablock_index):
 				target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index]
 				if(target_material_slot.material and target_material_slot.material.node_tree):
 					_set_animation_data(target_material_slot.material.node_tree, action, slot)
-					return
 
 		case "KEY":
 			if(target_object.data and type(target_object.data) is bpy.types.Mesh and target_object.data.shape_keys):
 				_set_animation_data(target_object.data.shape_keys, action, slot)
-				return
 
 		case "ARMATURE":
 			if(target_object.data and type(target_object.data) is bpy.types.Armature):
 				_set_animation_data(target_object.data, action, slot)
-				return
 
 		case "CAMERA":
 			if(target_object.data and type(target_object.data) is bpy.types.Camera):
 				_set_animation_data(target_object.data, action, slot)
-				return
 
 		case "LIGHT":
 			if(target_object.data and isinstance(target_object.data, bpy.types.Light)):
 				_set_animation_data(target_object.data, action, slot)
-				return
 
-
-def _link_slots(action: bpy.types.Action):
+def link_slots(action: bpy.types.Action):
 	"""
 	Link the Action to all data-blocks in the Scene.
 
 	Links its Slots to the targets, determined by each Slots `slot_link`.
 	"""
+	prepare_all_data_blocks(action)
+
 	for slot_link in action.slot_link.links:
 		slot_link: SlotLink = slot_link # Because autocomplete
 		if(slot_link.target and slot_link.slot_handle):
@@ -247,32 +219,3 @@ def _link_slots(action: bpy.types.Action):
 				if(slot.handle == slot_link.slot_handle):
 					_link_slot(action, slot, slot_link)
 					break
-
-class LinkSlots(bpy.types.Operator):
-	"""Link the Action to everything in the Scene.
-	Link its Slots to the selected targets.
-	If a Reset Animation is selected, it will be used to bring the Scene into a consistent state"""
-	bl_idname = "slot_link.link"
-	bl_label = "Link"
-	bl_category = "anim"
-	bl_options = {"REGISTER", "UNDO"}
-
-	use_reset: bpy.props.BoolProperty(name="Use Reset", default=True, description="If a Reset Animation is selected, it will be used to bring the Scene into a consistent state")
-
-	@classmethod
-	def poll(cls, context: bpy.types.Context):
-		return hasattr(context, "active_action") and context.active_action is not None
-
-	def execute(self, context: bpy.types.Context) -> set:
-		# Link the reset animation first if applicable
-		current_frame = context.scene.frame_current
-		action: bpy.types.Action = context.active_action  # pyright: ignore[reportAssignmentType]
-		if(self.use_reset and not action.slot_link.is_reset_animation and action.slot_link.reset_animation):
-			_prepare_all_data_blocks(action.slot_link.reset_animation)
-			_link_slots(action.slot_link.reset_animation)
-			context.scene.frame_set(1)
-		# Link the desired action
-		_prepare_all_data_blocks(action)
-		_link_slots(action)
-		context.scene.frame_set(current_frame)
-		return {"FINISHED"}

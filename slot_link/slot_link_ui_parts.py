@@ -106,7 +106,7 @@ def draw_link_messages(layout: bpy.types.UILayout, action: bpy.types.Action, onl
 		row.label(text="Not all Slots have Targets!", icon="WARNING_LARGE")
 		return 1
 
-	# Check whether this Action is linked everywhere state
+	# Check whether this Action is linked everywhere correctly
 	if(not only_error and not check_action(action)):
 		row = layout.row()
 		row.alert = True

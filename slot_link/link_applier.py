@@ -1,8 +1,8 @@
 import bpy
 
-from .slot_link import SlotLink, find_slot_link
+from .slot_link import SlotLink, SlotLinkTarget, find_slot_link
 
-__all__ = ["check_action", "check_slot_link_target_unique", "prepare_all_data_blocks", "link_slots"]
+__all__ = ["check_action", "check_slot_link_target_unique", "check_slot_link_all_targets_unique", "prepare_all_data_blocks", "link_slots"]
 
 
 # why u no polymorphism?
@@ -47,73 +47,113 @@ def check_action(action: bpy.types.Action) -> bool:
 		else:
 			continue
 
-		target_object: bpy.types.Object = slot_link.target
-		if(not target_object):
-			if(len(slot.users()) > 0):
-				return False
-			continue # The slot is still linked correctly
-
-		if(len(slot.users()) > 1):
+		if(len(slot.users()) > len(slot_link.targets)): # If a target is not set, then there will be one less user. It is still linked correctly.
 			return False
 
-		# why u no polymorphism?
-		match(slot.target_id_type):
-			case "OBJECT":
-				if(target_object.animation_data.action_slot != slot):
+		for link_target in slot_link.targets:
+			target_object: bpy.types.Object = link_target.target
+			if(not target_object):
+				if(len(slot.users()) > 0):
 					return False
+				continue # The slot is still linked correctly
 
-			case "MATERIAL":
-				if(target_object.material_slots and len(target_object.material_slots) > slot_link.datablock_index):
-					target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index] # pyright: ignore[reportRedeclaration]
-					if(target_material_slot.material):
-						if(not _has_animation_data(target_material_slot.material) or target_material_slot.material.animation_data.action_slot != slot):
+			# why u no polymorphism?
+			match(slot.target_id_type):
+				case "OBJECT":
+					if(target_object.animation_data.action_slot != slot):
+						return False
+
+				case "MATERIAL":
+					if(target_object.material_slots and len(target_object.material_slots) > link_target.datablock_index):
+						target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[link_target.datablock_index]
+						if(target_material_slot.material):
+							if(not _has_animation_data(target_material_slot.material) or target_material_slot.material.animation_data.action_slot != slot):
+								return False
+
+				case "NODETREE":
+					if(target_object.material_slots and len(target_object.material_slots) > link_target.datablock_index):
+						target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[link_target.datablock_index]
+						if(target_material_slot.material and target_material_slot.material.node_tree):
+							if(not _has_animation_data(target_material_slot.material.node_tree) or target_material_slot.material.node_tree.animation_data.action_slot != slot):
+								return False
+
+				case "KEY":
+					if(target_object.data and type(target_object.data) is bpy.types.Mesh and target_object.data.shape_keys):
+						if(not _has_animation_data(target_object.data.shape_keys) or target_object.data.shape_keys.animation_data.action_slot != slot):
 							return False
 
-			case "NODETREE":
-				if(target_object.material_slots and len(target_object.material_slots) > slot_link.datablock_index):
-					target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index]
-					if(target_material_slot.material and target_material_slot.material.node_tree):
-						if(not _has_animation_data(target_material_slot.material.node_tree) or target_material_slot.material.node_tree.animation_data.action_slot != slot):
+				case "ARMATURE":
+					if(target_object.data and type(target_object.data) is bpy.types.Armature):
+						if(not _has_animation_data(target_object.data) or target_object.data.animation_data.action_slot != slot):
 							return False
 
-			case "KEY":
-				if(target_object.data and type(target_object.data) in [bpy.types.Mesh, bpy.types.Lattice] and target_object.data.shape_keys):
-					if(not _has_animation_data(target_object.data.shape_keys) or target_object.data.shape_keys.animation_data.action_slot != slot):
-						return False
+				case "CAMERA":
+					if(target_object.data and type(target_object.data) is bpy.types.Camera):
+						if(not _has_animation_data(target_object.data) or target_object.data.animation_data.action_slot != slot):
+							return False
 
-			case "ARMATURE":
-				if(target_object.data and type(target_object.data) is bpy.types.Armature):
-					if(not _has_animation_data(target_object.data) or target_object.data.animation_data.action_slot != slot):
-						return False
-
-			case "CAMERA":
-				if(target_object.data and type(target_object.data) is bpy.types.Camera):
-					if(not _has_animation_data(target_object.data) or target_object.data.animation_data.action_slot != slot):
-						return False
-
-			case "LIGHT":
-				if(target_object.data and isinstance(target_object.data, bpy.types.Light)):
-					if(not _has_animation_data(target_object.data) or target_object.data.animation_data.action_slot != slot):
-						return False
+				case "LIGHT":
+					if(target_object.data and isinstance(target_object.data, bpy.types.Light)):
+						if(not _has_animation_data(target_object.data) or target_object.data.animation_data.action_slot != slot):
+							return False
 	return True
 
 
-def check_slot_link_target_unique(action: bpy.types.Action, slot: bpy.types.ActionSlot) -> bool:
-	"""Check if this Slot's `target` isn't used by any other Slot with the same `target_id_type`"""
+def check_slot_link_target_unique(action: bpy.types.Action, slot: bpy.types.ActionSlot, link_target: SlotLinkTarget) -> bool:
+	"""Check if this Slot's `link_target` isn't used by any other Slot with the same `target_id_type` or by another of its own targets"""
 	slot_link = find_slot_link(action, slot.handle)
 	if(not slot_link):
 		return True
+	for check_target in slot_link.targets:
+		if(link_target == check_target):
+			continue
+		if(link_target.target == check_target.target):
+			if(slot.target_id_type in ["MATERIAL", "NODETREE"] and link_target.datablock_index != check_target.datablock_index):
+				continue
+			else:
+				return False
 	for check_slot in action.slots:
 		if(check_slot == slot or check_slot.target_id_type != slot.target_id_type):
 			continue
 		check_slot_link = find_slot_link(action, check_slot.handle)
 		if(not check_slot_link):
 			continue
-		if(slot_link.target == check_slot_link.target):
-			if(slot.target_id_type in ["MATERIAL", "NODETREE"] and slot_link.datablock_index != check_slot_link.datablock_index):
+		for check_target in check_slot_link.targets:
+			if(link_target.target == check_target.target):
+				if(slot.target_id_type in ["MATERIAL", "NODETREE"] and link_target.datablock_index != check_target.datablock_index):
+					continue
+				else:
+					return False
+	return True
+
+
+def check_slot_link_all_targets_unique(action: bpy.types.Action, slot: bpy.types.ActionSlot) -> bool:
+	"""Check if this Slot's `target` isn't used by any other Slot with the same `target_id_type`"""
+	slot_link = find_slot_link(action, slot.handle)
+	if(not slot_link):
+		return True
+	for link_target in slot_link.targets:
+		for check_target in slot_link.targets:
+			if(link_target == check_target):
 				continue
-			else:
-				return False
+			if(link_target.target == check_target.target):
+				if(slot.target_id_type in ["MATERIAL", "NODETREE"] and link_target.datablock_index != check_target.datablock_index):
+					continue
+				else:
+					return False
+	for check_slot in action.slots:
+		if(check_slot == slot or check_slot.target_id_type != slot.target_id_type):
+			continue
+		check_slot_link = find_slot_link(action, check_slot.handle)
+		if(not check_slot_link):
+			continue
+		for link_target in slot_link.targets:
+			for check_target in check_slot_link.targets:
+				if(link_target.target == check_target.target):
+					if(slot.target_id_type in ["MATERIAL", "NODETREE"] and link_target.datablock_index != check_target.datablock_index):
+						continue
+					else:
+						return False
 	return True
 
 
@@ -168,41 +208,44 @@ def _link_slot(action: bpy.types.Action, slot: bpy.types.ActionSlot, slot_link: 
 
 	Set the `action` and `slot` to that targets `animation_data`.
 	"""
-	if(not slot_link.target): return
-	target_object: bpy.types.Object = slot_link.target
+	if(len(slot_link.targets) == 0): return
+	for link_target in slot_link.targets:
+		if(not link_target.target):
+			continue
+		target_object: bpy.types.Object = link_target.target
 
-	# why u no polymorphism?
-	match(slot.target_id_type):
-		case "OBJECT":
-			_set_animation_data(target_object, action, slot)
+		# why u no polymorphism?
+		match(slot.target_id_type):
+			case "OBJECT":
+				_set_animation_data(target_object, action, slot)
 
-		case "MATERIAL":
-			if(target_object.material_slots and len(target_object.material_slots) > slot_link.datablock_index):
-				target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index]
-				if(target_material_slot.material):
-					_set_animation_data(target_material_slot.material, action, slot)
+			case "MATERIAL":
+				if(target_object.material_slots and len(target_object.material_slots) > link_target.datablock_index):
+					target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[link_target.datablock_index]
+					if(target_material_slot.material):
+						_set_animation_data(target_material_slot.material, action, slot)
 
-		case "NODETREE":
-			if(target_object.material_slots and len(target_object.material_slots) > slot_link.datablock_index):
-				target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[slot_link.datablock_index]
-				if(target_material_slot.material and target_material_slot.material.node_tree):
-					_set_animation_data(target_material_slot.material.node_tree, action, slot)
+			case "NODETREE":
+				if(target_object.material_slots and len(target_object.material_slots) > link_target.datablock_index):
+					target_material_slot: bpy.types.MaterialSlot = target_object.material_slots[link_target.datablock_index]
+					if(target_material_slot.material and target_material_slot.material.node_tree):
+						_set_animation_data(target_material_slot.material.node_tree, action, slot)
 
-		case "KEY":
-			if(target_object.data and type(target_object.data) in [bpy.types.Mesh, bpy.types.Lattice] and target_object.data.shape_keys):
-				_set_animation_data(target_object.data.shape_keys, action, slot)
+			case "KEY":
+				if(target_object.data and type(target_object.data) is bpy.types.Mesh and target_object.data.shape_keys):
+					_set_animation_data(target_object.data.shape_keys, action, slot)
 
-		case "ARMATURE":
-			if(target_object.data and type(target_object.data) is bpy.types.Armature):
-				_set_animation_data(target_object.data, action, slot)
+			case "ARMATURE":
+				if(target_object.data and type(target_object.data) is bpy.types.Armature):
+					_set_animation_data(target_object.data, action, slot)
 
-		case "CAMERA":
-			if(target_object.data and type(target_object.data) is bpy.types.Camera):
-				_set_animation_data(target_object.data, action, slot)
+			case "CAMERA":
+				if(target_object.data and type(target_object.data) is bpy.types.Camera):
+					_set_animation_data(target_object.data, action, slot)
 
-		case "LIGHT":
-			if(target_object.data and isinstance(target_object.data, bpy.types.Light)):
-				_set_animation_data(target_object.data, action, slot)
+			case "LIGHT":
+				if(target_object.data and isinstance(target_object.data, bpy.types.Light)):
+					_set_animation_data(target_object.data, action, slot)
 
 def link_slots(action: bpy.types.Action):
 	"""
@@ -214,7 +257,7 @@ def link_slots(action: bpy.types.Action):
 
 	for slot_link in action.slot_link.links:
 		slot_link: SlotLink = slot_link # Because autocomplete
-		if(slot_link.target and slot_link.slot_handle):
+		if(slot_link.slot_handle and len(slot_link.targets) > 0):
 			for slot in action.slots:
 				if(slot.handle == slot_link.slot_handle):
 					_link_slot(action, slot, slot_link)

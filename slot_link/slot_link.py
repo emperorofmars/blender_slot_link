@@ -103,8 +103,14 @@ def find_slot_link(action: bpy.types.Action, slot_handle: int) -> SlotLink | Non
 
 
 def register():
+	bpy.utils.register_class(SlotLink)
+	bpy.utils.register_class(ActionSlotLink)
+
 	bpy.types.Action.slot_link = bpy.props.PointerProperty(type=ActionSlotLink, name="Slot Link", options=set())
 
 def unregister():
 	if hasattr(bpy.types.Action, "slot_link"):
 		del bpy.types.Action.slot_link
+
+	bpy.utils.unregister_class(ActionSlotLink)
+	bpy.utils.unregister_class(SlotLink)

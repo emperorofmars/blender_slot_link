@@ -71,6 +71,8 @@ class SlotLinkEditor(bpy.types.Panel):
 
 
 def register():
+	bpy.utils.register_class(SlotLinkEditor)
+
 	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_spacer_before)
 	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_link_buttons)
 	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_spacer_after)
@@ -85,3 +87,5 @@ def unregister():
 	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_spacer_after)
 	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_link_buttons)
 	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_spacer_before)
+
+	bpy.utils.unregister_class(SlotLinkEditor)

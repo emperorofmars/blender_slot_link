@@ -277,3 +277,10 @@ def draw_slot_link_editor(layout: bpy.types.UILayout, action: bpy.types.Action):
 		row_text.label(text="Then select a Target in the Slot panel")
 
 	draw_orphan_slots(layout, action)
+
+
+def register():
+	bpy.utils.register_class(SlotLinkList)
+
+def unregister():
+	bpy.utils.unregister_class(SlotLinkList)

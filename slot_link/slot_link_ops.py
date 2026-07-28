@@ -102,3 +102,18 @@ class LinkSlots(bpy.types.Operator):
 		link_slots(action)
 		context.scene.frame_set(current_frame)
 		return {"FINISHED"}
+
+
+def register():
+	bpy.utils.register_class(AddSlotLink)
+	bpy.utils.register_class(RemoveSlotLink)
+	bpy.utils.register_class(ClearScene)
+	bpy.utils.register_class(PrepareLinks)
+	bpy.utils.register_class(LinkSlots)
+
+def unregister():
+	bpy.utils.unregister_class(LinkSlots)
+	bpy.utils.unregister_class(PrepareLinks)
+	bpy.utils.unregister_class(ClearScene)
+	bpy.utils.unregister_class(RemoveSlotLink)
+	bpy.utils.unregister_class(AddSlotLink)

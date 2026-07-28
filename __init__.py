@@ -1,11 +1,8 @@
 import bpy
-from . import auto_load
-from .slot_link import package_key
+from .slot_link import package_key, register_slot_link, unregister_slot_link
 
 
 package_key.package_key = __package__
-
-auto_load.init()
 
 
 class SlotLinkAddonPreferences(bpy.types.AddonPreferences):
@@ -41,11 +38,11 @@ def slot_link_docs():
 
 
 def register():
-	auto_load.register()
 	bpy.utils.register_class(SlotLinkAddonPreferences)
 	bpy.utils.register_manual_map(slot_link_docs)
+	register_slot_link()
 
 def unregister():
+	unregister_slot_link()
 	bpy.utils.unregister_manual_map(slot_link_docs)
 	bpy.utils.unregister_class(SlotLinkAddonPreferences)
-	auto_load.unregister()

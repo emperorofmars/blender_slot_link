@@ -4,8 +4,29 @@ from .link_applier import link_slots, prepare_all_data_blocks
 from .slot_link import SlotLink
 
 
-__all__ = ["AddSlotLink", "RemoveSlotLink", "LinkSlots", "PrepareLinks", "ClearScene"]
+__all__ = ["AddSlotLink", "RemoveSlotLink", "LinkSlots", "PrepareLinks", "ClearScene", "MigrateSlotLink_0_2"]
 
+
+class MigrateSlotLink_0_2(bpy.types.Operator):
+	"""Migrate SlotLink Data.
+
+	This is non destructive, and will allow you to specify multiple targets per Slot!"""
+
+	bl_idname = "slot_link.migrate_0_2"
+	bl_label = "Migrate Slot Link Data"
+	bl_category = "anim"
+	bl_options = {"REGISTER", "UNDO"}
+
+	def execute(self, context: bpy.types.Context) -> set:
+		for action in bpy.data.actions: # pyright: ignore[reportAssignmentType]
+			for slot_link in action.slot_link.links:
+				if(len(slot_link.targets) == 0):
+					target = slot_link.targets.add()
+					target.target = slot_link.target
+					target.datablock_index = slot_link.datablock_index
+				slot_link.target = None
+				slot_link.datablock_index = 0
+		return {"FINISHED"}
 
 class AddSlotLink(bpy.types.Operator):
 	"""Setup an animation target for this Action-Slot"""
@@ -26,6 +47,56 @@ class AddSlotLink(bpy.types.Operator):
 				return {"CANCELLED"}
 		slot_link: SlotLink = context.active_action.slot_link.links.add()
 		slot_link.slot_handle = self.slot_handle
+		slot_link.targets.add()
+		return {"FINISHED"}
+
+
+class AddSlotLinkTarget(bpy.types.Operator):
+	"""Setup an additional animation target for this Action-Slot"""
+	bl_idname = "slot_link.add_target"
+	bl_label = "Add Target"
+	bl_category = "anim"
+	bl_options = {"REGISTER", "UNDO"}
+
+	slot_handle: bpy.props.IntProperty(default=-1)
+
+	@classmethod
+	def poll(cls, context: bpy.types.Context) -> bool:
+		return hasattr(context, "active_action") and context.active_action is not None
+
+	def execute(self, context: bpy.types.Context) -> set:
+		for slot_link in context.active_action.slot_link.links:
+			if(slot_link.slot_handle == self.slot_handle):
+				break
+		else:
+			return {"CANCELLED"}
+		slot_link.targets.add()
+		return {"FINISHED"}
+
+
+class RemoveSlotLinkTarget(bpy.types.Operator):
+	"""Remove an animation target for this Action-Slot"""
+	bl_idname = "slot_link.remove_target"
+	bl_label = "Remove Target"
+	bl_category = "anim"
+	bl_options = {"REGISTER", "UNDO"}
+
+	slot_handle: bpy.props.IntProperty(default=-1)
+	target_index: bpy.props.IntProperty(default=-1)
+
+	@classmethod
+	def poll(cls, context: bpy.types.Context) -> bool:
+		return hasattr(context, "active_action") and context.active_action is not None
+
+	def execute(self, context: bpy.types.Context) -> set:
+		for slot_link in context.active_action.slot_link.links:
+			if(slot_link.slot_handle == self.slot_handle):
+				break
+		else:
+			return {"CANCELLED"}
+		if(len(slot_link.targets) <= self.target_index):
+			return {"CANCELLED"}
+		slot_link.targets.remove(self.target_index)
 		return {"FINISHED"}
 
 
@@ -106,14 +177,20 @@ class LinkSlots(bpy.types.Operator):
 
 def register():
 	bpy.utils.register_class(AddSlotLink)
+	bpy.utils.register_class(AddSlotLinkTarget)
+	bpy.utils.register_class(RemoveSlotLinkTarget)
 	bpy.utils.register_class(RemoveSlotLink)
 	bpy.utils.register_class(ClearScene)
 	bpy.utils.register_class(PrepareLinks)
 	bpy.utils.register_class(LinkSlots)
+	bpy.utils.register_class(MigrateSlotLink_0_2)
 
 def unregister():
+	bpy.utils.unregister_class(MigrateSlotLink_0_2)
 	bpy.utils.unregister_class(LinkSlots)
 	bpy.utils.unregister_class(PrepareLinks)
 	bpy.utils.unregister_class(ClearScene)
 	bpy.utils.unregister_class(RemoveSlotLink)
+	bpy.utils.unregister_class(RemoveSlotLinkTarget)
+	bpy.utils.unregister_class(AddSlotLinkTarget)
 	bpy.utils.unregister_class(AddSlotLink)

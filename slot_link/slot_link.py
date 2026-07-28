@@ -13,14 +13,13 @@ def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
 	If relevant, also looks into the animation and figures out if the `target_object` is suitable, based on the animations fcurve data_paths.
 	"""
 	action: bpy.types.Action = self.id_data
+	slot_link = self.rna_ancestors()[2]
 
 	for slot in action.slots:
-		if(slot.handle == self.slot_handle):
+		if(slot.handle == slot_link.slot_handle):
 			break
 	else:
 		return False
-
-	#import re
 
 	match slot.target_id_type:
 		case "OBJECT":
@@ -35,11 +34,6 @@ def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
 									if(fcurve.data_path.startswith("pose.")):
 										if(type(target_object.data) is not bpy.types.Armature):
 											return False
-
-										# Too far? What if user deletes a bone from an animated armature? Calculate confidence based on the percentage of matched bones and use that as a cutoff? What if it animated only one bone??
-										#if(match := re.search(r"^pose.bones\[\"(?P<bone_name>[\w. -:,]+)\"\]", fcurve.data_path)):
-										#	if(match.groupdict()["bone_name"] not in target_object.data.bones):
-										#		return False
 			return True
 		case "MATERIAL":
 			if(target_object.material_slots and len(target_object.material_slots) > 0):
@@ -63,7 +57,7 @@ def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
 	return False
 
 
-class SlotLink(bpy.types.PropertyGroup):
+class SlotLinkTarget(bpy.types.PropertyGroup):
 	"""
 	Links an Actions Slot to a target `bpy.types.Object`.
 
@@ -71,9 +65,19 @@ class SlotLink(bpy.types.PropertyGroup):
 
 	`datablock_index` is used in case the Slot has a `target_id_type` of `MATERIAL` for example. Then the index points to the instantiated meshes material-slot index.
 	"""
-	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1)
 	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="The Object this Slot should animate", poll=_slot_link_poll)
 	datablock_index: bpy.props.IntProperty(name="Datablock Index", description="The index of the Material/Nodetree/etc..", default=0, min=0)
+
+
+class SlotLink(bpy.types.PropertyGroup):
+	"""
+	Links an Actions Slot to a a set of targets.
+	"""
+	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1)
+	targets: bpy.props.CollectionProperty(type=SlotLinkTarget, name="Targets", description="The Objects this Slot should animate")
+
+	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="Legacy, please migrate!", poll=_slot_link_poll)
+	datablock_index: bpy.props.IntProperty(name="Datablock Index", description="Legacy, please migrate!", default=0, min=0)
 
 
 class ActionSlotLink(bpy.types.PropertyGroup):
@@ -103,6 +107,7 @@ def find_slot_link(action: bpy.types.Action, slot_handle: int) -> SlotLink | Non
 
 
 def register():
+	bpy.utils.register_class(SlotLinkTarget)
 	bpy.utils.register_class(SlotLink)
 	bpy.utils.register_class(ActionSlotLink)
 
@@ -114,3 +119,4 @@ def unregister():
 
 	bpy.utils.unregister_class(ActionSlotLink)
 	bpy.utils.unregister_class(SlotLink)
+	bpy.utils.unregister_class(SlotLinkTarget)

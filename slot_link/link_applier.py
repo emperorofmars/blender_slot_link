@@ -78,7 +78,7 @@ def check_action(action: bpy.types.Action) -> bool:
 								return False
 
 				case "KEY":
-					if(target_object.data and type(target_object.data) is bpy.types.Mesh and target_object.data.shape_keys):
+					if(target_object.data and type(target_object.data) in [bpy.types.Mesh, bpy.types.Lattice] and target_object.data.shape_keys):
 						if(not _has_animation_data(target_object.data.shape_keys) or target_object.data.shape_keys.animation_data.action_slot != slot):
 							return False
 
@@ -130,6 +130,7 @@ def check_slot_link_all_targets_unique(action: bpy.types.Action, slot: bpy.types
 		if(not check_slot_link_target_unique(action, slot, link_target)):
 			return False
 	return True
+
 
 ## Prepare animation_data
 
@@ -206,7 +207,7 @@ def _link_slot(action: bpy.types.Action, slot: bpy.types.ActionSlot, slot_link: 
 						_set_animation_data(target_material_slot.material.node_tree, action, slot)
 
 			case "KEY":
-				if(target_object.data and type(target_object.data) is bpy.types.Mesh and target_object.data.shape_keys):
+				if(target_object.data and type(target_object.data) in [bpy.types.Mesh, bpy.types.Lattice] and target_object.data.shape_keys):
 					_set_animation_data(target_object.data.shape_keys, action, slot)
 
 			case "ARMATURE":

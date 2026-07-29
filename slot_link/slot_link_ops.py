@@ -1,12 +1,13 @@
 import bpy
 
 from .link_applier import link_slots, prepare_all_data_blocks
-from .slot_link import SlotLink
+from .slot_link import SlotLink, slot_link_poll
 
 
 __all__ = ["AddSlotLink", "RemoveSlotLink", "LinkSlots", "PrepareLinks", "ClearScene", "MigrateSlotLink_0_2"]
 
 
+### TODO remove legacy data-model by 2027-08-01
 class MigrateSlotLink_0_2(bpy.types.Operator):
 	"""Migrate SlotLink Data.
 
@@ -28,8 +29,12 @@ class MigrateSlotLink_0_2(bpy.types.Operator):
 				slot_link.datablock_index = 0
 		return {"FINISHED"}
 
+
 class AddSlotLink(bpy.types.Operator):
-	"""Setup an animation target for this Action-Slot"""
+	"""Setup an animation target for this Action-Slot.
+
+	If possible, already assign the correct target.
+	"""
 	bl_idname = "slot_link.add"
 	bl_label = "Setup Slot Link"
 	bl_category = "anim"
@@ -44,10 +49,38 @@ class AddSlotLink(bpy.types.Operator):
 	def execute(self, context: bpy.types.Context) -> set:
 		for link in context.active_action.slot_link.links:
 			if(link.slot_handle == self.slot_handle):
-				return {"CANCELLED"}
+				return {"CANCELLED"} # SlotLink for this `slot_handle` already exists
+		for slot in context.active_action.slots:
+			if(slot.handle == self.slot_handle):
+				break
+		else:
+			return {"CANCELLED"} # No slot for the `slot_handle`
+
 		slot_link: SlotLink = context.active_action.slot_link.links.add()
 		slot_link.slot_handle = self.slot_handle
-		slot_link.targets.add()
+		link_target = slot_link.targets.add()
+
+		# Try to determine the target, if possible
+		if(len(slot.users()) == 1):
+			if(slot.target_id_type == "OBJECT"):
+				link_target.target = slot.users()[0]
+			else:
+				poll_target = None
+				num_poll_targets = 0
+				for blender_object in bpy.data.objects:
+					if(slot_link_poll(link_target, blender_object)):
+						poll_target = blender_object
+						num_poll_targets += 1
+				if(poll_target and num_poll_targets == 1):
+					link_target.target = poll_target
+					if(slot.target_id_type in ["MATERIAL", "NODETREE"] and poll_target.material_slots and len(poll_target.material_slots) > 0):
+						for material_index, material in enumerate(poll_target.material_slots):
+							if(slot.target_id_type == "MATERIAL" and slot.users()[0] == material.material):
+								link_target.datablock_index = material_index
+								break
+							elif(slot.target_id_type == "NODETREE" and slot.users()[0] == material.material.node_tree):
+								link_target.datablock_index = material_index
+								break
 		return {"FINISHED"}
 
 
@@ -96,14 +129,21 @@ class RemoveSlotLinkTarget(bpy.types.Operator):
 			return {"CANCELLED"}
 		if(len(slot_link.targets) <= self.target_index):
 			return {"CANCELLED"}
-		slot_link.targets.remove(self.target_index)
+
+		if(len(slot_link.targets) <= 1):
+			# Only reset the last remaining target. This is only possible if the operator is called directly. The SlotLink gui won't shot the delete-button if only one target remains.
+			slot_link.targets[self.target_index].target = None
+			slot_link.targets[self.target_index].datablock_index = 0
+		else:
+			# Actually delete the target
+			slot_link.targets.remove(self.target_index)
 		return {"FINISHED"}
 
 
 class RemoveSlotLink(bpy.types.Operator):
 	"""Remove orphaned link"""
 	bl_idname = "slot_link.remove"
-	bl_label = "Remove Slot Link"
+	bl_label = "Remove Orphaned Link"
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 

@@ -15,7 +15,7 @@ def _draw_editor(self, context: bpy.types.Context):
 		return
 	layout: bpy.types.UILayout = self.layout
 	layout.separator(factor=2, type="LINE")
-	draw_slot_link_editor(self.layout, context.active_action)
+	draw_slot_link_editor(layout, context.active_action)
 
 
 def _draw_slot_link_selector(self, context: bpy.types.Context):
@@ -23,7 +23,8 @@ def _draw_slot_link_selector(self, context: bpy.types.Context):
 	if(_context_invalid(context)):
 		return
 	layout: bpy.types.UILayout = self.layout
-	draw_slot_target_selector(self.layout, context.active_action, context.active_action.slots.active, True)
+	layout.label(text="Slot Link Target(s):")
+	draw_slot_target_selector(layout, context.active_action, context.active_action.slots.active, True)
 
 
 def _draw_link_buttons(self, context: bpy.types.Context):

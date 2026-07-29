@@ -7,6 +7,7 @@ from .slot_link import SlotLink, SlotLinkTarget, slot_link_poll
 __all__ = ["AddSlotLink", "SetupAction", "RemoveSlotLink", "LinkSlots", "PrepareLinks", "ClearScene", "MigrateSlotLink_0_2"]
 
 
+### TODO remove legacy data-model by 2027-08-01
 class MigrateSlotLink_0_2(bpy.types.Operator):
 	"""Migrate SlotLink Data.
 
@@ -83,7 +84,10 @@ def _ensure_slot_link(action: bpy.types.Action, slot: bpy.types.ActionSlot) -> S
 
 
 class AddSlotLink(bpy.types.Operator):
-	"""Setup an animation target for this Action-Slot"""
+	"""Setup an animation target for this Action-Slot.
+
+	If possible, already assign the correct target.
+	"""
 	bl_idname = "slot_link.add"
 	bl_label = "Setup Slot Link"
 	bl_category = "anim"
@@ -186,14 +190,21 @@ class RemoveSlotLinkTarget(bpy.types.Operator):
 			return {"CANCELLED"}
 		if(len(slot_link.targets) <= self.target_index):
 			return {"CANCELLED"}
-		slot_link.targets.remove(self.target_index)
+
+		if(len(slot_link.targets) <= 1):
+			# Only reset the last remaining target. This is only possible if the operator is called directly. The SlotLink gui won't shot the delete-button if only one target remains.
+			slot_link.targets[self.target_index].target = None
+			slot_link.targets[self.target_index].datablock_index = 0
+		else:
+			# Actually delete the target
+			slot_link.targets.remove(self.target_index)
 		return {"FINISHED"}
 
 
 class RemoveSlotLink(bpy.types.Operator):
 	"""Remove orphaned link"""
 	bl_idname = "slot_link.remove"
-	bl_label = "Remove Slot Link"
+	bl_label = "Remove Orphaned Link"
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 

@@ -1,9 +1,11 @@
 import bpy
+from typing import Protocol
+
 
 package_key: str
 
 
-class SlotLinkPreferences:
+class SlotLinkPreferences(Protocol):
 	use_separate_editor: bool
 	"""Move Slot Link editor to separate Panel"""
 

@@ -48,6 +48,14 @@ class SlotLinkList(bpy.types.UIList):
 					row.label(text=f"[ Material {link_target.datablock_index} ]", icon="ERROR")
 
 
+### TODO remove legacy data-model by 2027-08-01
+def _needs_migrate(action: bpy.types.Action) -> bool:
+	for slot_link in action.slot_link.links:
+		if(len(slot_link.targets) == 0):
+			return True
+	return False
+
+
 def draw_link_messages(layout: bpy.types.UILayout, action: bpy.types.Action, only_error: bool = False) -> int:
 	"""Draw warnings"""
 
@@ -59,8 +67,14 @@ def draw_link_messages(layout: bpy.types.UILayout, action: bpy.types.Action, onl
 			return -1
 		if(action.users > 1):
 			row = layout.row()
-			row.label(text="Please add a new Slot!", icon="INFO")
+			row.label(text="Please add a new Slot! (animate anything)", icon="INFO")
 			return -1
+
+	if(_needs_migrate(action)):
+		row = layout.row()
+		row.alert = True
+		row.label(text="Please migrate to newer data-model!")
+		return -1
 
 	# Check if some Slots want to be linked to the same datablock
 	for slot in action.slots:
@@ -135,16 +149,20 @@ def draw_link_buttons(layout: bpy.types.UILayout, action: bpy.types.Action, only
 	# Prepare legacy/newly created Action
 	if(action.is_action_legacy):
 		row = layout.row()
-		row.alert = True
-		layout.operator(PrepareLinks.bl_idname)
+		row.alert = not check_action(action)
+		row.operator(PrepareLinks.bl_idname)
 		return
 
-	state = check_action(action)
+	if(_needs_migrate(action)):
+		row = layout.row()
+		row.alert = True
+		row.operator(MigrateSlotLink_0_2.bl_idname, icon="WARNING_LARGE")
+		return
 
 	# Main link button
 	row = layout.row(align=True)
 	row.alignment = "EXPAND"
-	row.alert = state == 0
+	row.alert = not check_action(action)
 	row.scale_x = row.scale_y = scale
 	row.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED").use_reset = True
 	if(not only_one_button and action.slot_link.reset_animation):
@@ -154,7 +172,7 @@ def draw_link_buttons(layout: bpy.types.UILayout, action: bpy.types.Action, only
 
 
 def draw_slot_target_selector(layout: bpy.types.UILayout, action: bpy.types.Action, slot: bpy.types.ActionSlot | None = None, is_slot_panel: bool = False):
-	"""GUI to select a Slots targets"""
+	"""GUI to select Slot targets"""
 	if(slot is not None):
 		active_slot: bpy.types.ActionSlot = slot
 		slot_link = find_slot_link(action, slot.handle)
@@ -268,13 +286,6 @@ def draw_slot_link_editor(layout: bpy.types.UILayout, action: bpy.types.Action):
 			row.operator("wm.url_open", text="Slot Link Documentation", icon="HELP").url = "https://docs.stfform.at/guide/blender/slot_link.html"
 		else:
 			row.link(text="Slot Link Documentation", icon="HELP", url="https://docs.stfform.at/guide/blender/slot_link.html")
-
-	for slot_link in action.slot_link.links:
-		if(len(slot_link.targets) == 0):
-			row = layout.row()
-			row.alert = True
-			row.operator(MigrateSlotLink_0_2.bl_idname, icon="WARNING_LARGE")
-			return
 
 	draw_reset_animation_selector(layout, action)
 	layout.separator(factor=1)

@@ -14,7 +14,7 @@ def slot_link_poll(slot_link_target, target_object: bpy.types.Object) -> bool:
 
 	:param SlotLink slot_link: The slot_link to poll for
 	:param bpy.types.Object target_object: The Object to check
-	:returns bool: True if the Object can be used as the slot_links `target`.
+	:returns bool: True if the Object can be used as the slot_link_targets `target`.
 	"""
 	action: bpy.types.Action = slot_link_target.id_data
 	slot_link = slot_link_target.rna_ancestors()[2]
@@ -80,6 +80,7 @@ class SlotLink(bpy.types.PropertyGroup):
 	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1)
 	targets: bpy.props.CollectionProperty(type=SlotLinkTarget, name="Targets", description="The Objects this Slot should animate")
 
+	### TODO remove legacy data-model by 2027-08-01
 	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="Legacy, please migrate!", poll=slot_link_poll)
 	datablock_index: bpy.props.IntProperty(name="Datablock Index", description="Legacy, please migrate!", default=0, min=0)
 

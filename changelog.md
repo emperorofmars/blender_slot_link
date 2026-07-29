@@ -2,10 +2,10 @@
 
 ## v0.2.0
 * Added support for linking multiple targets per SlotLink.
-* Due to the changed data-model, implemented an operator to migrate existing animations.\
-	It will have to be executed once, before working with SlotLink when SlotLink data already existed.\
-	No data gets lost, all will work as before.
-* The initial setup for a SlotLink now tries to determine the target automatically.
+	* SlotLink animations with the old data-model have to be migrated with one convenient button-press.\
+		This has to happen when SlotLink data is already set up.\
+		Nothing gets lost, all will work as before.
+* The initial setup for a new SlotLink now tries to determine the target automatically.
 * "KEY" slots now support linking lattices.
 
 ## v0.1.5

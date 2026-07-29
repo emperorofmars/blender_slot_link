@@ -75,7 +75,7 @@ class SlotLinkTarget(bpy.types.PropertyGroup):
 
 class SlotLink(bpy.types.PropertyGroup):
 	"""
-	Links an Actions Slot to a a set of targets.
+	Links an Actions Slot to a set of targets.
 	"""
 	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1)
 	targets: bpy.props.CollectionProperty(type=SlotLinkTarget, name="Targets", description="The Objects this Slot should animate")

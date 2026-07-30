@@ -1,26 +1,28 @@
 import bpy
 
 
-__all__ = ["SlotLink", "ActionSlotLink", "find_slot_link"]
+__all__ = ["SlotLink", "ActionSlotLink", "find_slot_link", "slot_link_poll"]
 
 
-def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
+def slot_link_poll(slot_link, target_object: bpy.types.Object) -> bool:
 	"""
 	Super powered poll function!
 
 	Determines if the `target_object` is suitable based on the SlotLinks Slots `target_id_type`.
 
 	If relevant, also looks into the animation and figures out if the `target_object` is suitable, based on the animations fcurve data_paths.
+
+	:param SlotLink slot_link: The slot_link to poll for
+	:param bpy.types.Object target_object: The Object to check
+	:returns bool: True if the Object can be used as the slot_links `target`.
 	"""
-	action: bpy.types.Action = self.id_data
+	action: bpy.types.Action = slot_link.id_data
 
 	for slot in action.slots:
-		if(slot.handle == self.slot_handle):
+		if(slot.handle == slot_link.slot_handle):
 			break
 	else:
 		return False
-
-	#import re
 
 	match slot.target_id_type:
 		case "OBJECT":
@@ -35,11 +37,6 @@ def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
 									if(fcurve.data_path.startswith("pose.")):
 										if(type(target_object.data) is not bpy.types.Armature):
 											return False
-
-										# Too far? What if user deletes a bone from an animated armature? Calculate confidence based on the percentage of matched bones and use that as a cutoff? What if it animated only one bone??
-										#if(match := re.search(r"^pose.bones\[\"(?P<bone_name>[\w. -:,]+)\"\]", fcurve.data_path)):
-										#	if(match.groupdict()["bone_name"] not in target_object.data.bones):
-										#		return False
 			return True
 		case "MATERIAL":
 			if(target_object.material_slots and len(target_object.material_slots) > 0):
@@ -48,7 +45,7 @@ def _slot_link_poll(self, target_object: bpy.types.Object) -> bool:
 			if(target_object.material_slots and len(target_object.material_slots) > 0):
 				return True
 		case "KEY":
-			if(target_object.data and type(target_object.data) is bpy.types.Mesh and target_object.data.shape_keys):
+			if(target_object.data and type(target_object.data) in [bpy.types.Mesh, bpy.types.Lattice] and target_object.data.shape_keys):
 				return True
 		case "ARMATURE":
 			if(target_object.data and type(target_object.data) is bpy.types.Armature):
@@ -72,7 +69,7 @@ class SlotLink(bpy.types.PropertyGroup):
 	`datablock_index` is used in case the Slot has a `target_id_type` of `MATERIAL` for example. Then the index points to the instantiated meshes material-slot index.
 	"""
 	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1)
-	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="The Object this Slot should animate", poll=_slot_link_poll)
+	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="The Object this Slot should animate", poll=slot_link_poll)
 	datablock_index: bpy.props.IntProperty(name="Datablock Index", description="The index of the Material/Nodetree/etc..", default=0, min=0)
 
 

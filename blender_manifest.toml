@@ -85,6 +85,7 @@ paths_exclude_pattern = [
 	"/readme.md",
 	"/LICENSE-*",
 	"/CONTRIBUTING.md",
+	"/changelog.md",
 	"/requirements.txt",
 	"/pyproject.toml",
 	"/packages",

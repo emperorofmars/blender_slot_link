@@ -5,6 +5,7 @@
 	* SlotLink animations with the old data-model have to be migrated with one convenient button-press.\
 		This has to happen when SlotLink data is already set up.\
 		Nothing gets lost, all will work as before.
+* Added "Slot Link" dropdown menu to the dopesheet editor.
 
 ## v0.1.6
 * The initial setup for a new SlotLink now tries to determine the target automatically.

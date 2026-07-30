@@ -2,6 +2,7 @@
 import bpy
 
 from .package_key import get_preferences
+from .slot_link_ops import ClearScene, SetupAllActions
 from .slot_link_ui_parts import draw_link_buttons, draw_link_messages, draw_slot_link_editor, draw_slot_target_selector
 
 
@@ -25,6 +26,25 @@ def _draw_slot_link_selector(self, context: bpy.types.Context):
 	layout: bpy.types.UILayout = self.layout
 	layout.label(text="Slot Link Target(s):")
 	draw_slot_target_selector(layout, context.active_action, context.active_action.slots.active, True)
+
+
+class SlotLinkMenu(bpy.types.Menu):
+	bl_idname = "DOPESHEET_MT_slot_link_menu"
+	bl_label = "Slot Link"
+
+	def draw(self, context: bpy.types.Context):
+		layout: bpy.types.UILayout = self.layout # pyright: ignore[reportAssignmentType]
+
+		if(not _context_invalid(context)):
+			draw_link_buttons(self.layout, context.active_action, vertical_only=True)
+			layout.separator(factor=1, type="LINE")
+
+		layout.operator(SetupAllActions.bl_idname)
+		layout.operator(ClearScene.bl_idname)
+
+def _draw_link_menu(self, context: bpy.types.Context):
+	if(context.space_data and context.space_data.mode == "ACTION"):
+		self.layout.menu(SlotLinkMenu.bl_idname)
 
 
 def _draw_link_buttons(self, context: bpy.types.Context):
@@ -73,7 +93,9 @@ class SlotLinkEditor(bpy.types.Panel):
 
 def register():
 	bpy.utils.register_class(SlotLinkEditor)
+	bpy.utils.register_class(SlotLinkMenu)
 
+	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_link_menu)
 	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_spacer_before)
 	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_link_buttons)
 	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_spacer_after)
@@ -88,5 +110,7 @@ def unregister():
 	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_spacer_after)
 	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_link_buttons)
 	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_spacer_before)
+	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_link_menu)
 
+	bpy.utils.unregister_class(SlotLinkMenu)
 	bpy.utils.unregister_class(SlotLinkEditor)

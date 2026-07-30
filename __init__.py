@@ -30,6 +30,7 @@ class SlotLinkAddonPreferences(bpy.types.AddonPreferences):
 def slot_link_docs():
 	manual_map = (
 		("bpy.ops.slot_link.*", ""),
+		("bpy.types.slotlinktarget.*", ""),
 		("bpy.types.slotlink.*", ""),
 		("bpy.types.actionslotlink.*", ""),
 		("bpy.types.action.slot_link.*", ""),

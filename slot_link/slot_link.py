@@ -4,7 +4,7 @@ import bpy
 __all__ = ["SlotLink", "ActionSlotLink", "find_slot_link", "slot_link_poll"]
 
 
-def slot_link_poll(slot_link, target_object: bpy.types.Object) -> bool:
+def slot_link_poll(slot_link_target, target_object: bpy.types.Object) -> bool:
 	"""
 	Super powered poll function!
 
@@ -14,9 +14,10 @@ def slot_link_poll(slot_link, target_object: bpy.types.Object) -> bool:
 
 	:param SlotLink slot_link: The slot_link to poll for
 	:param bpy.types.Object target_object: The Object to check
-	:returns bool: True if the Object can be used as the slot_links `target`.
+	:returns bool: True if the Object can be used as the slot_link_targets `target`.
 	"""
-	action: bpy.types.Action = slot_link.id_data
+	action: bpy.types.Action = slot_link_target.id_data
+	slot_link = slot_link_target.rna_ancestors()[2]
 
 	for slot in action.slots:
 		if(slot.handle == slot_link.slot_handle):
@@ -60,7 +61,7 @@ def slot_link_poll(slot_link, target_object: bpy.types.Object) -> bool:
 	return False
 
 
-class SlotLink(bpy.types.PropertyGroup):
+class SlotLinkTarget(bpy.types.PropertyGroup):
 	"""
 	Links an Actions Slot to a target `bpy.types.Object`.
 
@@ -68,9 +69,20 @@ class SlotLink(bpy.types.PropertyGroup):
 
 	`datablock_index` is used in case the Slot has a `target_id_type` of `MATERIAL` for example. Then the index points to the instantiated meshes material-slot index.
 	"""
-	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1)
 	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="The Object this Slot should animate", poll=slot_link_poll)
 	datablock_index: bpy.props.IntProperty(name="Datablock Index", description="The index of the Material/Nodetree/etc..", default=0, min=0)
+
+
+class SlotLink(bpy.types.PropertyGroup):
+	"""
+	Links an Actions Slot to a set of targets.
+	"""
+	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1)
+	targets: bpy.props.CollectionProperty(type=SlotLinkTarget, name="Targets", description="The Objects this Slot should animate")
+
+	### TODO remove legacy data-model by 2027-08-01
+	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="Legacy, please migrate!", poll=slot_link_poll)
+	datablock_index: bpy.props.IntProperty(name="Datablock Index", description="Legacy, please migrate!", default=0, min=0)
 
 
 class ActionSlotLink(bpy.types.PropertyGroup):
@@ -100,6 +112,7 @@ def find_slot_link(action: bpy.types.Action, slot_handle: int) -> SlotLink | Non
 
 
 def register():
+	bpy.utils.register_class(SlotLinkTarget)
 	bpy.utils.register_class(SlotLink)
 	bpy.utils.register_class(ActionSlotLink)
 
@@ -111,3 +124,4 @@ def unregister():
 
 	bpy.utils.unregister_class(ActionSlotLink)
 	bpy.utils.unregister_class(SlotLink)
+	bpy.utils.unregister_class(SlotLinkTarget)

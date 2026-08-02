@@ -6,6 +6,8 @@
 		This has to happen when SlotLink data is already set up.\
 		Nothing gets lost, all will work as before.
 * Added "Slot Link" dropdown menu to the dopesheet editor.
+* Added selector for a target collection. If set, the Action will only be applied to objects in that collection.
+* Added the option on link operators to perform a full reset, which fully recreates the `AnimData` structs. It is off by default.
 
 ## v0.1.6
 * The initial setup for a new SlotLink now tries to determine the target automatically.

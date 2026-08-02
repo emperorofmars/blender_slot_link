@@ -10,6 +10,8 @@ def slot_link_poll(slot_link_target, target_object: bpy.types.Object) -> bool:
 
 	Determines if the `target_object` is suitable based on the SlotLinks Slots `target_id_type`.
 
+	The target_object must be part of the target Collection, if it is set.
+
 	If relevant, also looks into the animation and figures out if the `target_object` is suitable, based on the animations fcurve data_paths.
 
 	:param SlotLink slot_link: The slot_link to poll for
@@ -18,6 +20,9 @@ def slot_link_poll(slot_link_target, target_object: bpy.types.Object) -> bool:
 	"""
 	action: bpy.types.Action = slot_link_target.id_data
 	slot_link = slot_link_target.rna_ancestors()[2]
+
+	if(action.slot_link.target_collection and target_object not in action.slot_link.target_collection.all_objects.values()):
+		return False
 
 	for slot in action.slots:
 		if(slot.handle == slot_link.slot_handle):
@@ -96,6 +101,8 @@ class ActionSlotLink(bpy.types.PropertyGroup):
 	Or reference an "animation" that is set to be a reset-animation.
 	If this is the case, when this "animation" is applied to the Scene, the reset-animation will be applied before, to put the Scene into a consistent state.
 	"""
+	target_collection: bpy.props.PointerProperty(type=bpy.types.Collection, name="Target Collection", description="Only allow selecting target Objects within this Collection. Animation data from other collections will not be touched or reset. If it remains empty, all object can be targeted, and the entire scene will be reset.", options=set())
+
 	links: bpy.props.CollectionProperty(type=SlotLink, name="Slot Links", options=set())
 	active_index: bpy.props.IntProperty(name="Active Slot Link", options=set())
 

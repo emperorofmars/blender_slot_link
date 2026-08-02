@@ -226,8 +226,10 @@ class ClearScene(bpy.types.Operator):
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
+	full_reset: bpy.props.BoolProperty(name="Full Reset (also Clear NLA data)", default=False, description="Fully recreate the animation-data. This will remove all NLA data!")
+
 	def execute(self, context: bpy.types.Context) -> set:
-		prepare_all_data_blocks(None)
+		prepare_all_data_blocks(None, self.full_reset)
 		return {"FINISHED"}
 
 
@@ -257,7 +259,8 @@ class LinkSlots(bpy.types.Operator):
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
-	use_reset: bpy.props.BoolProperty(name="Use Reset", default=True, description="If a Reset Animation is selected, it will be used to bring the Scene into a consistent state")
+	full_reset: bpy.props.BoolProperty(name="Full Reset (also Clear NLA data)", default=False, description="Fully recreate the animation-data. This will remove all NLA data!")
+	use_reset_animation: bpy.props.BoolProperty(name="Use Reset Animation", default=True, description="If a Reset Animation is selected, it will be used to bring the Scene into a consistent state")
 
 	@classmethod
 	def poll(cls, context: bpy.types.Context):
@@ -267,11 +270,11 @@ class LinkSlots(bpy.types.Operator):
 		# Link the reset animation first if applicable
 		current_frame = context.scene.frame_current
 		action: bpy.types.Action = context.active_action # pyright: ignore[reportAssignmentType]
-		if(self.use_reset and not action.slot_link.is_reset_animation and action.slot_link.reset_animation):
-			link_slots(action.slot_link.reset_animation)
+		if(self.use_reset_animation and not action.slot_link.is_reset_animation and action.slot_link.reset_animation):
+			link_slots(action.slot_link.reset_animation, self.full_reset)
 			context.scene.frame_set(1)
 		# Link the desired action
-		link_slots(action)
+		link_slots(action, self.full_reset)
 		context.scene.frame_set(current_frame)
 		return {"FINISHED"}
 

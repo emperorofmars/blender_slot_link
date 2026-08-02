@@ -98,6 +98,11 @@ def draw_link_messages(layout: bpy.types.UILayout, action: bpy.types.Action, onl
 			for link_target in slot_link.targets:
 				if(not link_target.target):
 					break
+				if(action.slot_link.target_collection and link_target.target not in action.slot_link.target_collection.all_objects.values()):
+					row = layout.row()
+					row.alert = True
+					row.label(text="Some Targets are outside Collection!", icon="WARNING_LARGE")
+					return 0
 				if(slot.target_id_type in ["MATERIAL", "NODETREE"]):
 					valid_material = True
 					if(link_target.target.material_slots and len(link_target.target.material_slots) <= link_target.datablock_index):
@@ -133,6 +138,9 @@ def draw_reset_animation_selector(layout: bpy.types.UILayout, action: bpy.types.
 	"""Mark the Action as a reset animation, or select a reset animation"""
 	layout = layout.column(align=True)
 
+	layout.prop(action.slot_link, "target_collection")
+	layout.separator(factor=1, type="SPACE")
+
 	# Reset animation
 	if(not action.slot_link.reset_animation):
 		layout.prop(action.slot_link, "is_reset_animation")
@@ -164,11 +172,11 @@ def draw_link_buttons(layout: bpy.types.UILayout, action: bpy.types.Action, only
 	row.alignment = "EXPAND"
 	row.alert = not check_action(action)
 	row.scale_x = row.scale_y = scale
-	row.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED").use_reset = True
+	row.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED").use_reset_animation = True
 	if(not only_one_button and action.slot_link.reset_animation):
 		row = row.row(align=True) if not vertical_only else layout.column()
 		row.alignment = "RIGHT"
-		row.operator(LinkSlots.bl_idname, text="..without Reset").use_reset = False
+		row.operator(LinkSlots.bl_idname, text="..without Reset").use_reset_animation = False
 
 
 def draw_slot_target_selector(layout: bpy.types.UILayout, action: bpy.types.Action, slot: bpy.types.ActionSlot | None = None, is_slot_panel: bool = False):

@@ -1,5 +1,7 @@
 import bpy
 
+from .util import has_shapekeys
+
 
 __all__ = ["SlotLink", "ActionSlotLink", "find_slot_link", "slot_link_poll"]
 
@@ -51,7 +53,7 @@ def slot_link_poll(slot_link_target, target_object: bpy.types.Object) -> bool:
 			if(target_object.material_slots and len(target_object.material_slots) > 0):
 				return True
 		case "KEY":
-			if(target_object.data and type(target_object.data) in [bpy.types.Mesh, bpy.types.Lattice] and target_object.data.shape_keys):
+			if(has_shapekeys(target_object)):
 				return True
 		case "ARMATURE":
 			if(target_object.data and type(target_object.data) is bpy.types.Armature):

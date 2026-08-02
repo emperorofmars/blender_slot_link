@@ -1,6 +1,7 @@
 import bpy
 
 from .slot_link import SlotLink, SlotLinkTarget, find_slot_link
+from .util import has_shapekeys
 
 __all__ = ["check_action", "check_slot_link_target_unique", "check_slot_link_all_targets_unique", "prepare_all_data_blocks", "link_slots"]
 
@@ -44,7 +45,6 @@ def check_action(action: bpy.types.Action) -> bool:
 			thing_type = getattr(bpy.data, data_key)
 			for thing in thing_type:
 				if(not _check_action_in_data_block(action, thing) or not check_subkeys(thing)):
-					print(f"failing: {thing}")
 					return False
 	else:
 		if(not _check_action_in_data_block(action, target_collection) or not check_subkeys(target_collection)):
@@ -107,8 +107,8 @@ def check_action(action: bpy.types.Action) -> bool:
 								return False
 
 				case "KEY":
-					if(target_object.data and type(target_object.data) in [bpy.types.Mesh, bpy.types.Lattice] and target_object.data.shape_keys):
-						if(not _has_animation_data(target_object.data.shape_keys) or target_object.data.shape_keys.animation_data.action_slot != slot):
+					if(has_shapekeys(target_object)):
+						if(not _has_animation_data(target_object.data.shape_keys) or target_object.data.shape_keys.animation_data.action_slot != slot): # pyright: ignore[reportArgumentType]
 							return False
 
 				case "ARMATURE":
@@ -235,6 +235,7 @@ def _link_slot(action: bpy.types.Action, slot: bpy.types.ActionSlot, slot_link: 
 	Set the `action` and `slot` to that targets `animation_data`.
 	"""
 	target_collection: bpy.types.Collection | None = override_target_collection if override_target_collection else action.slot_link.target_collection
+
 	if(len(slot_link.targets) == 0): return
 	for link_target in slot_link.targets:
 		if(not link_target.target):
@@ -261,8 +262,8 @@ def _link_slot(action: bpy.types.Action, slot: bpy.types.ActionSlot, slot_link: 
 						_set_animation_data(target_material_slot.material.node_tree, action, slot)
 
 			case "KEY":
-				if(target_object.data and type(target_object.data) in [bpy.types.Mesh, bpy.types.Lattice] and target_object.data.shape_keys):
-					_set_animation_data(target_object.data.shape_keys, action, slot)
+				if(has_shapekeys(target_object)):
+					_set_animation_data(target_object.data.shape_keys, action, slot) # pyright: ignore[reportArgumentType]
 
 			case "ARMATURE":
 				if(target_object.data and type(target_object.data) is bpy.types.Armature):

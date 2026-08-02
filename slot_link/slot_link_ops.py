@@ -271,7 +271,7 @@ class LinkSlots(bpy.types.Operator):
 		current_frame = context.scene.frame_current
 		action: bpy.types.Action = context.active_action # pyright: ignore[reportAssignmentType]
 		if(self.use_reset_animation and not action.slot_link.is_reset_animation and action.slot_link.reset_animation):
-			link_slots(action.slot_link.reset_animation, self.full_reset)
+			link_slots(action.slot_link.reset_animation, self.full_reset, action.slot_link.target_collection)
 			context.scene.frame_set(1)
 		# Link the desired action
 		link_slots(action, self.full_reset)

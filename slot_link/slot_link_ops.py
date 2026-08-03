@@ -39,7 +39,12 @@ def _attempt_autosetup(slot: bpy.types.ActionSlot, slot_link: SlotLink):
 
 	def is_unique(blender_object: bpy.types.Object, datablock_index: int = 0) -> bool:
 		for other_slot_link in slot_link.id_data.slot_link.links:
-			if(other_slot_link != slot_link_target):
+			for other_slot in slot_link.id_data.slots:
+				if(other_slot.handle == other_slot_link.slot_handle):
+					break
+			else:
+				continue
+			if(other_slot_link != slot_link and slot.target_id_type == other_slot.target_id_type):
 				for other_target in other_slot_link.targets:
 					if(other_target.target == blender_object):
 						if(slot.target_id_type in ["MATERIAL", "NODETREE"] and other_target.datablock_index != datablock_index):

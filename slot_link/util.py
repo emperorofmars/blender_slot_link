@@ -9,4 +9,4 @@ def has_shapekeys(blender_object: bpy.types.Object) -> bool:
 		for type_candidate in types_with_key:
 			if(isinstance(blender_object.data, type_candidate)):
 				return True
-	return True
+	return False

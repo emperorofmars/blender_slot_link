@@ -175,7 +175,8 @@ def _prepare_data_block(action: bpy.types.Action | None, blender_data_block: bpy
 			blender_data_block.animation_data_create()
 		if(blender_data_block.animation_data):
 			blender_data_block.animation_data.action = action
-			blender_data_block.animation_data.action_slot = None
+			if(action):
+				blender_data_block.animation_data.action_slot = None
 
 def prepare_all_data_blocks(action: bpy.types.Action | None, full_reset: bool = False, override_target_collection: bpy.types.Collection | None = None):
 	"""
@@ -188,7 +189,7 @@ def prepare_all_data_blocks(action: bpy.types.Action | None, full_reset: bool = 
 	:param bool full_reset: Fully reset all animation data, including NLA
 	:param bpy.types.Collection | None override_target_collection: Override the actions SlotLink target Collection
 	"""
-	target_collection: bpy.types.Collection | None = override_target_collection if override_target_collection else action.slot_link.target_collection
+	target_collection: bpy.types.Collection | None = override_target_collection if override_target_collection else (action.slot_link.target_collection if action else None)
 	if(action):
 		action.use_fake_user = True
 

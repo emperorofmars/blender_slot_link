@@ -5,7 +5,7 @@ Blender supports only one animation per .blend file.\
 Actions are modular pieces from which the one animation is composed of.
 
 **Slot Link redefines Actions to be full standalone animations.**\
-To achieve that, you have to set the animation target for each Slot of an Action.
+To achieve that, you have to set the animation targets for each Action-Slot.
 
 Press the `Link Slots` button to play and edit an animation.\
 Easily switch between animations with only one additional button press.
@@ -19,9 +19,11 @@ Easily switch between animations with only one additional button press.
 > [!NOTE]
 > Slot Link purposely allows only selecting Objects as targets.
 >
-> If you animated a Mesh's Shape Keys, simply select the Object on which that Mesh is instantiated.
->
-> This has the added advantage of being able to animate multiple instances of the same Mesh separately.
+> If you animate Mesh's Shape Keys, simply select the Object on which that Mesh is instantiated.\
+> An unfortunate limitation in Blender is that this will still animate the shape-key on all instances of that mesh.\
+> This can only be fixed in Blender itself.\
+> The data-model however is ready for export into a game-engine, where it will correctly target only the specified instance of the mesh.\
+> The only importer/exporter capable of using SlotLink animations right now is the experimental [STF format](https://docs.stfform.at).
 
 Please open issues for any bugs or misbehavior you notice. Feel free to open issues for feature requests.
 

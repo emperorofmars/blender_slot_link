@@ -1,10 +1,10 @@
 import bpy
 
 from .link_applier import link_slots, prepare_all_data_blocks
-from .slot_link import SlotLink, SlotLinkTarget, slot_link_poll
+from .slot_link import SlotLink, SlotLinkTarget, poll_slot_link_target
 
 
-__all__ = ["AddSlotLink", "SetupAction", "RemoveSlotLink", "LinkSlots", "PrepareLinks", "ClearScene", "MigrateSlotLink_0_2"]
+__all__ = ["SetupSlotLink", "SetupAction", "RemoveSlotLink", "LinkSlots", "PrepareLinks", "ClearScene", "MigrateSlotLink_0_2"]
 
 
 ### TODO remove legacy data-model by 2027-08-01
@@ -12,7 +12,6 @@ class MigrateSlotLink_0_2(bpy.types.Operator):
 	"""Migrate SlotLink Data.
 
 	This is non destructive, and will allow you to specify multiple targets per Slot!"""
-
 	bl_idname = "slot_link.migrate_0_2"
 	bl_label = "Migrate Slot Link Data"
 	bl_category = "anim"
@@ -31,7 +30,7 @@ class MigrateSlotLink_0_2(bpy.types.Operator):
 
 
 def _attempt_autosetup(slot: bpy.types.ActionSlot, slot_link: SlotLink):
-	"""Try to determine the target for a Slot, if possible"""
+	"""Try to determine the target for a Slot, if possible."""
 
 	if(len(slot_link.targets) != 1):
 		return
@@ -49,14 +48,14 @@ def _attempt_autosetup(slot: bpy.types.ActionSlot, slot_link: SlotLink):
 							return False
 		return True
 
-	if(len(slot.users()) == 1 and slot.target_id_type == "OBJECT" and slot_link_poll(slot_link_target, slot.users()[0]) and is_unique(slot.users()[0])): # pyright: ignore[reportArgumentType]
+	if(len(slot.users()) == 1 and slot.target_id_type == "OBJECT" and poll_slot_link_target(slot_link_target, slot.users()[0]) and is_unique(slot.users()[0])): # pyright: ignore[reportArgumentType]
 		slot_link_target.target = slot.users()[0]
 		return
 
 	poll_target = None
 	num_poll_targets = 0
 	for blender_object in bpy.data.objects:
-		if(slot_link_poll(slot_link_target, blender_object)):
+		if(poll_slot_link_target(slot_link_target, blender_object)):
 			poll_target = blender_object
 			num_poll_targets += 1
 	if(poll_target and num_poll_targets == 1):
@@ -83,11 +82,10 @@ def _ensure_slot_link(action: bpy.types.Action, slot: bpy.types.ActionSlot) -> S
 	return slot_link
 
 
-class AddSlotLink(bpy.types.Operator):
+class SetupSlotLink(bpy.types.Operator):
 	"""Setup an animation target for this Action-Slot.
 
-	If possible, already assign the correct target.
-	"""
+	If unambiguously possible, assign the correct target."""
 	bl_idname = "slot_link.add"
 	bl_label = "Setup Slot Link"
 	bl_category = "anim"
@@ -111,9 +109,10 @@ class AddSlotLink(bpy.types.Operator):
 
 
 class SetupAction(bpy.types.Operator):
-	"""Setup Slot Link animation targets for this Action.
+	"""Setup Slot-Link animation targets for this Action.
+
 	Targets will only be assigned if unambiguous.
-	This won't modify existing Slot Links."""
+	This won't modify already set up Slot-Links."""
 	bl_idname = "slot_link.setup_action"
 	bl_label = "Autosetup"
 	bl_category = "anim"
@@ -131,8 +130,9 @@ class SetupAction(bpy.types.Operator):
 
 class SetupAllActions(bpy.types.Operator):
 	"""Setup Slot Link animation targets for all Actions.
-	Targets will only be assigned if unambiguous.
-	This won't modify existing Slot Links."""
+
+	Targets will be only assigned if unambiguous.
+	This won't modify already set up Slot-Links."""
 	bl_idname = "slot_link.setup_all_actions"
 	bl_label = "Setup Slot Link for all Actions"
 	bl_category = "anim"
@@ -234,8 +234,8 @@ class ClearScene(bpy.types.Operator):
 
 
 class PrepareLinks(bpy.types.Operator):
-	"""Link the Action to everything in the Scene.
-	Prevents any other Actions from being linked anywhere"""
+	"""Link the Action to everything in the specified Collection or the entire Scene.
+	Prevents any other Actions from being linked anywhere."""
 	bl_idname = "slot_link.prepare"
 	bl_label = "Prepare"
 	bl_category = "anim"
@@ -251,9 +251,10 @@ class PrepareLinks(bpy.types.Operator):
 
 
 class LinkSlots(bpy.types.Operator):
-	"""Link the Action to everything in the Scene.
-	Link its Slots to the selected targets.
-	If a Reset Animation is selected, it will be used to bring the Scene into a consistent state"""
+	"""Link the Action to everything in the specified Collection or the entire Scene.
+	Link its Slots to the selected Slot-Link targets.
+
+	If a Reset Animation is selected, it will be used to bring the Scene into a consistent state first."""
 	bl_idname = "slot_link.link"
 	bl_label = "Link"
 	bl_category = "anim"
@@ -280,7 +281,7 @@ class LinkSlots(bpy.types.Operator):
 
 
 def register():
-	bpy.utils.register_class(AddSlotLink)
+	bpy.utils.register_class(SetupSlotLink)
 	bpy.utils.register_class(SetupAction)
 	bpy.utils.register_class(SetupAllActions)
 	bpy.utils.register_class(AddSlotLinkTarget)
@@ -301,4 +302,4 @@ def unregister():
 	bpy.utils.unregister_class(SetupAction)
 	bpy.utils.unregister_class(RemoveSlotLinkTarget)
 	bpy.utils.unregister_class(AddSlotLinkTarget)
-	bpy.utils.unregister_class(AddSlotLink)
+	bpy.utils.unregister_class(SetupSlotLink)

@@ -3,10 +3,10 @@ import bpy
 from .util import has_shapekeys
 
 
-__all__ = ["SlotLink", "ActionSlotLink", "find_slot_link", "slot_link_poll"]
+__all__ = ["SlotLink", "ActionSlotLink", "find_slot_link", "poll_slot_link_target"]
 
 
-def slot_link_poll(slot_link_target, target_object: bpy.types.Object) -> bool:
+def poll_slot_link_target(slot_link_target, target_object: bpy.types.Object) -> bool:
 	"""
 	Super powered poll function!
 
@@ -68,6 +68,11 @@ def slot_link_poll(slot_link_target, target_object: bpy.types.Object) -> bool:
 	return False
 
 
+def _poll_reset_animation(self, animation: bpy.types.Action) -> bool:
+	print(self.id_data)
+	return self.id_data != animation and animation.slot_link.is_reset_animation and (not self.target_collection or not animation.slot_link.target_collection or self.target_collection == animation.slot_link.target_collection)
+
+
 class SlotLinkTarget(bpy.types.PropertyGroup):
 	"""
 	Links an Actions Slot to a target `bpy.types.Object`.
@@ -76,7 +81,7 @@ class SlotLinkTarget(bpy.types.PropertyGroup):
 
 	`datablock_index` is used in case the Slot has a `target_id_type` of `MATERIAL` for example. Then the index points to the instantiated meshes material-slot index.
 	"""
-	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="The Object this Slot should animate", poll=slot_link_poll)
+	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="The Object this Slot should animate", poll=poll_slot_link_target)
 	datablock_index: bpy.props.IntProperty(name="Datablock Index", description="The index of the Material/Nodetree/etc..", default=0, min=0)
 
 
@@ -88,7 +93,7 @@ class SlotLink(bpy.types.PropertyGroup):
 	targets: bpy.props.CollectionProperty(type=SlotLinkTarget, name="Targets", description="The Objects this Slot should animate")
 
 	### TODO remove legacy data-model by 2027-08-01
-	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="Legacy, please migrate!", poll=slot_link_poll)
+	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="Legacy, please migrate!", poll=poll_slot_link_target)
 	datablock_index: bpy.props.IntProperty(name="Datablock Index", description="Legacy, please migrate!", default=0, min=0)
 
 
@@ -103,13 +108,13 @@ class ActionSlotLink(bpy.types.PropertyGroup):
 	Or reference an "animation" that is set to be a reset-animation.
 	If this is the case, when this "animation" is applied to the Scene, the reset-animation will be applied before, to put the Scene into a consistent state.
 	"""
-	target_collection: bpy.props.PointerProperty(type=bpy.types.Collection, name="Target Collection", description="Only allow selecting target Objects within this Collection. Animation data from other collections will not be touched or reset. If it remains empty, all object can be targeted, and the entire scene will be reset.", options=set())
+	target_collection: bpy.props.PointerProperty(type=bpy.types.Collection, name="Target Collection", description="Only link Objects within this Collection. Animation data from other collections will not be touched or reset. If no Collection is specified, the entire scene will be reset and linked.", options=set())
 
 	links: bpy.props.CollectionProperty(type=SlotLink, name="Slot Links", options=set())
 	active_index: bpy.props.IntProperty(name="Active Slot Link", options=set())
 
 	is_reset_animation: bpy.props.BoolProperty(name="Is Reset-Animation", description="Use this Action to reset every property to a desired default state", default=False)
-	reset_animation: bpy.props.PointerProperty(type=bpy.types.Action, name="Reset Animation", description="On 'Link Slots', the reset-animation will be used to reset the state of the entire scene", poll=lambda self, action: bpy.context.active_action != action and action.slot_link.is_reset_animation, options=set())
+	reset_animation: bpy.props.PointerProperty(type=bpy.types.Action, name="Reset Animation", description="On 'Link Slots', the reset-animation will be used to reset the state of the entire scene", poll=_poll_reset_animation, options=set())
 
 
 def find_slot_link(action: bpy.types.Action, slot_handle: int) -> SlotLink | None:

@@ -2,13 +2,12 @@
 
 ## v0.2.0
 * Added support for linking multiple targets per SlotLink.
-	* SlotLink animations with the old data-model have to be migrated with one convenient button-press.\
-		This has to happen when SlotLink data is already set up.\
+	* SlotLink animations have to be migrated with one convenient button-press.\
 		Nothing gets lost, all will work as before.
 * Added "Slot Link" dropdown menu to the dopesheet editor.
 * Added selector for a target collection. If set, the Action will only be applied to objects in that collection.
 * Added the option on link operators to perform a full reset, which fully recreates the `AnimData` structs. It is off by default.
-* Support all resources with shape-keys, e.g. curves.
+* "KEY" slots now support linking curves.
 
 ## v0.1.6
 * The initial setup for a new SlotLink now tries to determine the target automatically.

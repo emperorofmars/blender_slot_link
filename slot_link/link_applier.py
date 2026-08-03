@@ -171,8 +171,8 @@ def _prepare_data_block(action: bpy.types.Action | None, blender_data_block: bpy
 	if(hasattr(blender_data_block, "animation_data")):
 		if(full_reset):
 			blender_data_block.animation_data_clear()
-			if(action):
-				blender_data_block.animation_data_create()
+		if(action and not blender_data_block.animation_data):
+			blender_data_block.animation_data_create()
 		if(blender_data_block.animation_data):
 			blender_data_block.animation_data.action = action
 			blender_data_block.animation_data.action_slot = None
@@ -180,8 +180,13 @@ def _prepare_data_block(action: bpy.types.Action | None, blender_data_block: bpy
 def prepare_all_data_blocks(action: bpy.types.Action | None, full_reset: bool = False, override_target_collection: bpy.types.Collection | None = None):
 	"""
 	Clear the `animation_data` on all Blender IDs.
+	A full reset recreates the `AnimData` structs, removing all NLA data as well.
 
-	If an Action is provided, create new `animation_data`, set the Action, but no Slot.
+	If an Action is provided, set the Action, but no Slot.
+
+	:param bpy.types.Action action: The Action to set in the animation data
+	:param bool full_reset: Fully reset all animation data, including NLA
+	:param bpy.types.Collection | None override_target_collection: Override the actions SlotLink target Collection
 	"""
 	target_collection: bpy.types.Collection | None = override_target_collection if override_target_collection else action.slot_link.target_collection
 	if(action):
@@ -282,6 +287,10 @@ def link_slots(action: bpy.types.Action, full_reset: bool = False, override_targ
 	Link the Action to all data-blocks in the Scene.
 
 	Links its Slots to the targets, determined by each Slots `slot_link`.
+
+	:param bpy.types.Action action: The Action to link
+	:param bool full_reset: Fully reset all animation data, including NLA
+	:param bpy.types.Collection | None override_target_collection: Override the actions SlotLink target Collection
 	"""
 	prepare_all_data_blocks(action, full_reset, override_target_collection)
 

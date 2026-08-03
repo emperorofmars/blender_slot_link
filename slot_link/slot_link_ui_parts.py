@@ -2,7 +2,7 @@ import bpy
 
 from .package_key import get_preferences
 from .slot_link import ActionSlotLink, find_slot_link
-from .slot_link_ops import AddSlotLink, AddSlotLinkTarget, MigrateSlotLink_0_2, RemoveSlotLink, LinkSlots, PrepareLinks, RemoveSlotLinkTarget, SetupAction
+from .slot_link_ops import SetupSlotLink, AddSlotLinkTarget, MigrateSlotLink_0_2, RemoveSlotLink, LinkSlots, PrepareLinks, RemoveSlotLinkTarget, SetupAction
 from .link_applier import check_action, check_slot_link_target_unique, check_slot_link_all_targets_unique
 
 
@@ -259,7 +259,7 @@ def draw_slot_target_selector(layout: bpy.types.UILayout, action: bpy.types.Acti
 	else:
 		row = layout.row()
 		row.alert = True
-		row.operator(AddSlotLink.bl_idname, icon="ADD").slot_handle = active_slot.handle
+		row.operator(SetupSlotLink.bl_idname, icon="ADD").slot_handle = active_slot.handle
 
 
 def draw_orphan_slots(layout: bpy.types.UILayout, action: bpy.types.Action):

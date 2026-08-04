@@ -42,39 +42,21 @@ class SlotLinkMenu(bpy.types.Menu):
 			col.enabled = context.active_action.slot_link.reset_animation is not None
 			col.operator(LinkSlots.bl_idname, text="..without Reset").use_reset_animation = False
 
-		#draw_link_buttons(self.layout, context.active_action, vertical_only=True)
 		layout.separator(factor=1, type="LINE")
 		layout.operator(SetupAllActions.bl_idname)
 		layout.operator(ClearScene.bl_idname)
 
-
 def _draw_link_menu(self, context: bpy.types.Context):
-	if(context.space_data and context.space_data.mode == "ACTION"):
+	if(context and context.space_data and context.space_data.mode == "ACTION"):
 		self.layout.menu(SlotLinkMenu.bl_idname)
 
-
-def _draw_link_buttons(self, context: bpy.types.Context):
 	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
 		return
-	draw_link_buttons(self.layout, context.active_action, True)
 
-def _draw_link_messages(self, context: bpy.types.Context):
-	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
-		return
-	draw_link_messages(self.layout, context.active_action, True)
-
-
-def _draw_spacer_before(self, context: bpy.types.Context):
-	"""Draw a Spacer in the Dopesheet header so there is a gab between the menus and the SlotLink button"""
-	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
-		return
 	self.layout.separator(factor=6)
-
-def _draw_spacer_after(self, context: bpy.types.Context):
-	"""Draw a Spacer in the Dopesheet header so there is a gab between the SlotLink button and the Action & Slot selector"""
-	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
-		return
+	draw_link_buttons(self.layout, context.active_action, True)
 	self.layout.separator(factor=2)
+	draw_link_messages(self.layout, context.active_action, True)
 
 
 class SlotLinkEditor(bpy.types.Panel):
@@ -102,20 +84,12 @@ def register():
 	bpy.utils.register_class(SlotLinkMenu)
 
 	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_link_menu)
-	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_spacer_before)
-	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_link_buttons)
-	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_spacer_after)
-	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_link_messages)
 	bpy.types.DOPESHEET_PT_action.append(_draw_editor)
 	bpy.types.DOPESHEET_PT_action_slot.append(_draw_slot_link_selector)
 
 def unregister():
 	bpy.types.DOPESHEET_PT_action_slot.remove(_draw_slot_link_selector)
 	bpy.types.DOPESHEET_PT_action.remove(_draw_editor)
-	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_link_messages)
-	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_spacer_after)
-	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_link_buttons)
-	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_spacer_before)
 	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_link_menu)
 
 	bpy.utils.unregister_class(SlotLinkMenu)

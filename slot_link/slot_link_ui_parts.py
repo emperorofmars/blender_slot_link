@@ -145,7 +145,7 @@ def draw_reset_animation_selector(layout: bpy.types.UILayout, action: bpy.types.
 			row.label(text="The Reset Animation has no Targets!", icon="ERROR")
 
 
-def draw_link_buttons(layout: bpy.types.UILayout, action: bpy.types.Action, only_one_button: bool = False, scale: float = 1, vertical_only: bool = False):
+def draw_link_buttons(layout: bpy.types.UILayout, action: bpy.types.Action, only_one_button: bool = False, scale: float = 1):
 	"""The main 'Link Slots' buttons"""
 
 	if(needs_migrate_2_0()):
@@ -162,13 +162,13 @@ def draw_link_buttons(layout: bpy.types.UILayout, action: bpy.types.Action, only
 		return
 
 	# Main link button
-	row = layout.row(align=True) if not vertical_only else layout.column()
+	row = layout.row(align=True)
 	row.alignment = "EXPAND"
 	row.alert = not check_action(action)
 	row.scale_x = row.scale_y = scale
 	row.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED").use_reset_animation = True
 	if(not only_one_button and action.slot_link.reset_animation):
-		row = row.row(align=True) if not vertical_only else layout.column()
+		row = row.row(align=True)
 		row.alignment = "RIGHT"
 		row.operator(LinkSlots.bl_idname, text="..without Reset").use_reset_animation = False
 

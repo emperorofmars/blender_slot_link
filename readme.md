@@ -19,10 +19,15 @@ Easily switch between animations with only one additional button press.
 > [!NOTE]
 > Slot Link purposely allows only selecting Objects as targets.
 >
-> If you animate Mesh's Shape Keys, simply select the Object on which that Mesh is instantiated.\
-> An unfortunate limitation in Blender is that this will still animate the shape-key on all instances of that mesh.\
-> This can only be fixed in Blender itself.\
-> The data-model however is ready for export into a game-engine, where it will correctly target only the specified instance of the mesh.\
+> If you animate a meshes shape keys, simply select the object on which that mesh is instantiated.
+>
+> This brings the data-model closer to how game engines and other tools work, but it may not always replay correctly in Blender.
+>
+> In case you animate the shape keys of a mesh-instance, Blender will play the animation on all instances of that mesh.\
+> Animating two instances of the same mesh differently is impossible.\
+> This is unfixable with extensions and has to be addressed in Blender natively.
+>
+> The Slot Link data-model however is ready for export into game-engines, where it will correctly target only the specified instance of the mesh.\
 > The only importer/exporter capable of using SlotLink animations right now is the experimental [STF format](https://docs.stfform.at).
 
 Please open issues for any bugs or misbehavior you notice. Feel free to open issues for feature requests.

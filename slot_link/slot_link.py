@@ -81,16 +81,16 @@ class SlotLinkTarget(bpy.types.PropertyGroup):
 
 	`datablock_index` is used in case the Slot has a `target_id_type` of `MATERIAL` for example. Then the index points to the instantiated meshes material-slot index.
 	"""
-	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="The Object this Slot should animate", poll=poll_slot_link_target)
-	datablock_index: bpy.props.IntProperty(name="Datablock Index", description="The index of the Material/Nodetree/etc..", default=0, min=0)
+	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="The Object this Slot should animate", poll=poll_slot_link_target, options=set())
+	datablock_index: bpy.props.IntProperty(name="Datablock Index", description="The index of the Material/Nodetree/etc..", default=0, min=0, options=set())
 
 
 class SlotLink(bpy.types.PropertyGroup):
 	"""
 	Links an Actions Slot to a set of targets.
 	"""
-	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1)
-	targets: bpy.props.CollectionProperty(type=SlotLinkTarget, name="Targets", description="The Objects this Slot should animate")
+	slot_handle: bpy.props.IntProperty(name="Slot Handle", default=-1, options=set())
+	targets: bpy.props.CollectionProperty(type=SlotLinkTarget, name="Targets", description="The Objects this Slot should animate", options=set())
 
 	### TODO remove legacy data-model by 2027-08-01
 	target: bpy.props.PointerProperty(type=bpy.types.Object, name="Target", description="Legacy, please migrate!", poll=poll_slot_link_target)
@@ -113,7 +113,7 @@ class ActionSlotLink(bpy.types.PropertyGroup):
 	links: bpy.props.CollectionProperty(type=SlotLink, name="Slot Links", options=set())
 	active_index: bpy.props.IntProperty(name="Active Slot Link", options=set())
 
-	is_reset_animation: bpy.props.BoolProperty(name="Is Reset-Animation", description="Use this Action to reset every property to a desired default state", default=False)
+	is_reset_animation: bpy.props.BoolProperty(name="Is Reset-Animation", description="Use this Action to reset every property to a desired default state", default=False, options=set())
 	reset_animation: bpy.props.PointerProperty(type=bpy.types.Action, name="Reset Animation", description="On 'Link Slots', the reset-animation will be used to reset the state of the entire scene", poll=_poll_reset_animation, options=set())
 
 

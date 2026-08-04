@@ -1,7 +1,9 @@
 import bpy
+from bpy.types import Context
 
 from .link_applier import link_slots, prepare_all_data_blocks
 from .slot_link import SlotLink, SlotLinkTarget, poll_slot_link_target
+from .util import are_all_actions_setup, context_valid, needs_migrate_2_0
 
 
 __all__ = ["SetupSlotLink", "SetupAction", "RemoveSlotLink", "LinkSlots", "PrepareLinks", "ClearScene", "MigrateSlotLink_0_2"]
@@ -16,6 +18,10 @@ class MigrateSlotLink_0_2(bpy.types.Operator):
 	bl_label = "Migrate Slot Link Data"
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
+
+	@classmethod
+	def poll(cls, context: Context) -> bool:
+		return needs_migrate_2_0()
 
 	def execute(self, context: bpy.types.Context) -> set:
 		for action in bpy.data.actions: # pyright: ignore[reportAssignmentType]
@@ -100,7 +106,7 @@ class SetupSlotLink(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context: bpy.types.Context) -> bool:
-		return hasattr(context, "active_action") and context.active_action is not None
+		return context_valid(context)
 
 	def execute(self, context: bpy.types.Context) -> set:
 		for slot in context.active_action.slots:
@@ -125,7 +131,7 @@ class SetupAction(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context: bpy.types.Context) -> bool:
-		return hasattr(context, "active_action") and context.active_action is not None
+		return context_valid(context) and not needs_migrate_2_0()
 
 	def execute(self, context: bpy.types.Context) -> set:
 		for slot in context.active_action.slots:
@@ -139,9 +145,13 @@ class SetupAllActions(bpy.types.Operator):
 	Targets will be only assigned if unambiguous.
 	This won't modify already set up Slot-Links."""
 	bl_idname = "slot_link.setup_all_actions"
-	bl_label = "Setup Slot Link for all Actions"
+	bl_label = "Setup all Actions"
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
+
+	@classmethod
+	def poll(cls, context: bpy.types.Context) -> bool:
+		return not are_all_actions_setup() and not needs_migrate_2_0()
 
 	def execute(self, context: bpy.types.Context) -> set:
 		for action in bpy.data.actions:
@@ -161,7 +171,7 @@ class AddSlotLinkTarget(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context: bpy.types.Context) -> bool:
-		return hasattr(context, "active_action") and context.active_action is not None
+		return context_valid(context)
 
 	def execute(self, context: bpy.types.Context) -> set:
 		for slot_link in context.active_action.slot_link.links:
@@ -185,7 +195,7 @@ class RemoveSlotLinkTarget(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context: bpy.types.Context) -> bool:
-		return hasattr(context, "active_action") and context.active_action is not None
+		return context_valid(context)
 
 	def execute(self, context: bpy.types.Context) -> set:
 		for slot_link in context.active_action.slot_link.links:
@@ -217,7 +227,7 @@ class RemoveSlotLink(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context: bpy.types.Context):
-		return hasattr(context, "active_action") and context.active_action is not None and len(context.active_action.slot_link.links) > 0
+		return context_valid(context) and len(context.active_action.slot_link.links) > 0
 
 	def execute(self, context: bpy.types.Context) -> set:
 		context.active_action.slot_link.links.remove(self.index)
@@ -233,6 +243,10 @@ class ClearScene(bpy.types.Operator):
 
 	full_reset: bpy.props.BoolProperty(name="Full Reset (also Clear NLA data)", default=False, description="Fully recreate the animation-data. This will remove all NLA data!")
 
+	@classmethod
+	def poll(cls, context: Context) -> bool:
+		return len(bpy.data.actions) > 0
+
 	def execute(self, context: bpy.types.Context) -> set:
 		prepare_all_data_blocks(None, self.full_reset)
 		return {"FINISHED"}
@@ -247,8 +261,8 @@ class PrepareLinks(bpy.types.Operator):
 	bl_options = {"REGISTER", "UNDO"}
 
 	@classmethod
-	def poll(cls, context: bpy.types.Context):
-		return hasattr(context, "active_action") and context.active_action is not None
+	def poll(cls, context: bpy.types.Context) -> bool:
+		return context_valid(context)
 
 	def execute(self, context: bpy.types.Context) -> set:
 		prepare_all_data_blocks(context.active_action)
@@ -269,8 +283,8 @@ class LinkSlots(bpy.types.Operator):
 	use_reset_animation: bpy.props.BoolProperty(name="Use Reset Animation", default=True, description="If a Reset Animation is selected, it will be used to bring the Scene into a consistent state")
 
 	@classmethod
-	def poll(cls, context: bpy.types.Context):
-		return hasattr(context, "active_action") and context.active_action is not None
+	def poll(cls, context: bpy.types.Context) -> bool:
+		return context_valid(context)
 
 	def execute(self, context: bpy.types.Context) -> set:
 		# Link the reset animation first if applicable

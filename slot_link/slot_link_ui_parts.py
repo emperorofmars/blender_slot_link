@@ -4,6 +4,7 @@ from .package_key import get_preferences
 from .slot_link import ActionSlotLink, find_slot_link
 from .slot_link_ops import SetupSlotLink, AddSlotLinkTarget, MigrateSlotLink_0_2, RemoveSlotLink, LinkSlots, PrepareLinks, RemoveSlotLinkTarget, SetupAction
 from .link_applier import check_action, check_slot_link_target_unique, check_slot_link_all_targets_unique
+from .util import needs_migrate_2_0
 
 
 __all__ = ["draw_link_messages", "draw_reset_animation_selector", "draw_link_buttons", "draw_slot_target_selector", "draw_orphan_slots", "draw_slot_link_editor"]
@@ -48,14 +49,6 @@ class SlotLinkList(bpy.types.UIList):
 					row.label(text=f"[ Material {link_target.datablock_index} ]", icon="ERROR")
 
 
-### TODO remove legacy data-model by 2027-08-01
-def _needs_migrate(action: bpy.types.Action) -> bool:
-	for slot_link in action.slot_link.links:
-		if(len(slot_link.targets) == 0):
-			return True
-	return False
-
-
 def draw_link_messages(layout: bpy.types.UILayout, action: bpy.types.Action, only_error: bool = False) -> int:
 	"""Draw warnings"""
 
@@ -70,7 +63,7 @@ def draw_link_messages(layout: bpy.types.UILayout, action: bpy.types.Action, onl
 			row.label(text="Please add a new Slot! (animate anything)", icon="INFO")
 			return -1
 
-	if(_needs_migrate(action)):
+	if(needs_migrate_2_0()):
 		row = layout.row()
 		row.alert = True
 		row.label(text="Please migrate to newer data-model!")
@@ -154,17 +147,18 @@ def draw_reset_animation_selector(layout: bpy.types.UILayout, action: bpy.types.
 
 def draw_link_buttons(layout: bpy.types.UILayout, action: bpy.types.Action, only_one_button: bool = False, scale: float = 1, vertical_only: bool = False):
 	"""The main 'Link Slots' buttons"""
+
+	if(needs_migrate_2_0()):
+		row = layout.row()
+		row.alert = True
+		row.operator(MigrateSlotLink_0_2.bl_idname, icon="WARNING_LARGE")
+		return
+
 	# Prepare legacy/newly created Action
 	if(action.is_action_legacy):
 		row = layout.row()
 		row.alert = not check_action(action)
 		row.operator(PrepareLinks.bl_idname)
-		return
-
-	if(_needs_migrate(action)):
-		row = layout.row()
-		row.alert = True
-		row.operator(MigrateSlotLink_0_2.bl_idname, icon="WARNING_LARGE")
 		return
 
 	# Main link button

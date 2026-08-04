@@ -31,6 +31,8 @@ def _check_action_in_data_block(action: bpy.types.Action, blender_data_block: bp
 
 def check_action(action: bpy.types.Action) -> bool:
 	"""Check if the action is linked correctly throughout the Scene"""
+	if(not action):
+		return False
 	target_collection: bpy.types.Collection | None = action.slot_link.target_collection
 
 	def check_subkeys(thing) -> bool:

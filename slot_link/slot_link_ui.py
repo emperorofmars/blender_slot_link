@@ -2,17 +2,14 @@
 import bpy
 
 from .package_key import get_preferences
-from .slot_link_ops import ClearScene, SetupAllActions
+from .slot_link_ops import ClearScene, LinkSlots, MigrateSlotLink_0_2, PrepareLinks, SetupAllActions
 from .slot_link_ui_parts import draw_link_buttons, draw_link_messages, draw_slot_link_editor, draw_slot_target_selector
-
-
-def _context_invalid(context: bpy.types.Context) -> bool:
-	return not context or not hasattr(context, "active_action") or not context.active_action
+from .util import are_all_actions_setup, context_valid, needs_migrate_2_0
 
 
 def _draw_editor(self, context: bpy.types.Context):
 	"""Draw the full Slot Link editor GUI for the Action panel"""
-	if(_context_invalid(context) or get_preferences().use_separate_editor):
+	if(not context_valid(context) or get_preferences().use_separate_editor):
 		return
 	layout: bpy.types.UILayout = self.layout
 	layout.separator(factor=2, type="LINE")
@@ -21,7 +18,7 @@ def _draw_editor(self, context: bpy.types.Context):
 
 def _draw_slot_link_selector(self, context: bpy.types.Context):
 	"""Draw the target-selector GUI for the Slot panel"""
-	if(_context_invalid(context)):
+	if(not context_valid(context)):
 		return
 	layout: bpy.types.UILayout = self.layout
 	layout.label(text="Slot Link Target(s):")
@@ -35,12 +32,21 @@ class SlotLinkMenu(bpy.types.Menu):
 	def draw(self, context: bpy.types.Context):
 		layout: bpy.types.UILayout = self.layout # pyright: ignore[reportAssignmentType]
 
-		if(not _context_invalid(context)):
-			draw_link_buttons(self.layout, context.active_action, vertical_only=True)
-			layout.separator(factor=1, type="LINE")
+		if(needs_migrate_2_0()):
+			layout.operator(MigrateSlotLink_0_2.bl_idname, icon="WARNING_LARGE")
+		elif(context_valid(context) and context.active_action.is_action_legacy):
+			layout.operator(PrepareLinks.bl_idname)
+		elif(context_valid(context)):
+			layout.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED").use_reset_animation = True
+			col = layout.column()
+			col.enabled = context.active_action.slot_link.reset_animation is not None
+			col.operator(LinkSlots.bl_idname, text="..without Reset").use_reset_animation = False
 
+		#draw_link_buttons(self.layout, context.active_action, vertical_only=True)
+		layout.separator(factor=1, type="LINE")
 		layout.operator(SetupAllActions.bl_idname)
 		layout.operator(ClearScene.bl_idname)
+
 
 def _draw_link_menu(self, context: bpy.types.Context):
 	if(context.space_data and context.space_data.mode == "ACTION"):
@@ -48,25 +54,25 @@ def _draw_link_menu(self, context: bpy.types.Context):
 
 
 def _draw_link_buttons(self, context: bpy.types.Context):
-	if(_context_invalid(context) or get_preferences().hide_dopesheet_header_ui):
+	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
 		return
 	draw_link_buttons(self.layout, context.active_action, True)
 
 def _draw_link_messages(self, context: bpy.types.Context):
-	if(_context_invalid(context) or get_preferences().hide_dopesheet_header_ui):
+	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
 		return
 	draw_link_messages(self.layout, context.active_action, True)
 
 
 def _draw_spacer_before(self, context: bpy.types.Context):
 	"""Draw a Spacer in the Dopesheet header so there is a gab between the menus and the SlotLink button"""
-	if(_context_invalid(context) or get_preferences().hide_dopesheet_header_ui):
+	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
 		return
 	self.layout.separator(factor=6)
 
 def _draw_spacer_after(self, context: bpy.types.Context):
 	"""Draw a Spacer in the Dopesheet header so there is a gab between the SlotLink button and the Action & Slot selector"""
-	if(_context_invalid(context) or get_preferences().hide_dopesheet_header_ui):
+	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
 		return
 	self.layout.separator(factor=2)
 
@@ -82,7 +88,7 @@ class SlotLinkEditor(bpy.types.Panel):
 
 	@classmethod
 	def poll(cls, context: bpy.types.Context):
-		return not _context_invalid(context) and get_preferences().use_separate_editor
+		return context_valid(context) and get_preferences().use_separate_editor
 
 	def draw_header(self, context: bpy.types.Context):
 		self.layout.label(icon="DECORATE_LINKED")

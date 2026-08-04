@@ -1,10 +1,9 @@
 #pyright: reportArgumentType=none
 import bpy
 
-from .package_key import get_preferences
 from .slot_link_ops import ClearScene, LinkSlots, MigrateSlotLink_0_2, PrepareLinks, SetupAllActions
 from .slot_link_ui_parts import draw_link_buttons, draw_link_messages, draw_slot_link_editor, draw_slot_target_selector
-from .util import are_all_actions_setup, context_valid, needs_migrate_2_0
+from .util import context_valid, get_preferences, needs_migrate_2_0
 
 
 def _draw_editor(self, context: bpy.types.Context):

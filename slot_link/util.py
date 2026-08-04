@@ -1,6 +1,10 @@
 import bpy
+from typing import Protocol
 
-__all__ = ["context_valid", "has_shapekeys", "are_all_actions_setup", "needs_migrate_2_0"]
+from . import package_key
+
+
+__all__ = ["context_valid", "has_shapekeys", "are_all_actions_setup", "SlotLinkPreferences", "get_preferences", "needs_migrate_2_0"]
 
 
 def context_valid(context: bpy.types.Context | None) -> bool:
@@ -44,3 +48,21 @@ def needs_migrate_2_0() -> bool:
 			if(len(slot_link.targets) == 0):
 				return True
 	return False
+
+
+class SlotLinkPreferences(Protocol):
+	use_separate_editor: bool
+	"""Move Slot Link editor to separate Panel"""
+
+	hide_slot_link_list: bool
+	"""Hide the list of Slot Links (Use the Slot Panel instead)"""
+
+	hide_dopesheet_header_ui: bool
+	"""Hide Dopesheet header GUI"""
+
+	hide_documentation_link: bool
+	"""Hide Documentation link"""
+
+
+def get_preferences() -> SlotLinkPreferences:
+	return bpy.context.preferences.addons[package_key.package_key].preferences

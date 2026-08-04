@@ -1,10 +1,9 @@
 import bpy
 
-from .package_key import get_preferences
 from .slot_link import ActionSlotLink, find_slot_link
 from .slot_link_ops import SetupSlotLink, AddSlotLinkTarget, MigrateSlotLink_0_2, RemoveSlotLink, LinkSlots, PrepareLinks, RemoveSlotLinkTarget, SetupAction
 from .link_applier import check_action, check_slot_link_target_unique, check_slot_link_all_targets_unique
-from .util import needs_migrate_2_0
+from .util import get_preferences, needs_migrate_2_0
 
 
 __all__ = ["draw_link_messages", "draw_reset_animation_selector", "draw_link_buttons", "draw_slot_target_selector", "draw_orphan_slots", "draw_slot_link_editor"]

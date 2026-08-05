@@ -105,7 +105,6 @@ def _link_slot(action: bpy.types.Action, slot: bpy.types.ActionSlot, slot_link: 
 	if(len(slot_link.targets) == 0): return
 	for link_target in slot_link.targets:
 		if(not link_target.target):
-			print(f"Rip: {link_target.target}")
 			continue
 		target_object: bpy.types.Object = link_target.target
 		if(target_collection and target_object not in target_collection.all_objects.values()):
@@ -114,7 +113,6 @@ def _link_slot(action: bpy.types.Action, slot: bpy.types.ActionSlot, slot_link: 
 		anim_data_holder = retrieve_animation_data_holder(slot.target_id_type, link_target.target, link_target.datablock_index)
 		if(anim_data_holder):
 			_set_animation_data(anim_data_holder, action, slot)
-
 
 def link_slots(action: bpy.types.Action, full_reset: bool = False, override_target_collection: bpy.types.Collection | None = None, clear_outside_target_collection: bool = False):
 	"""

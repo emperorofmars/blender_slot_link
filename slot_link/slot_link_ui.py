@@ -1,11 +1,11 @@
 #pyright: reportArgumentType=none
 import bpy
 
-from .link_validator import validate_action
+from .util import context_valid, needs_migrate_2_0
 from .preferences import get_preferences
 from .slot_link_ops import ClearScene, LinkSlots, MigrateSlotLink_0_2, PrepareLinks, SetupAllActions
 from .slot_link_ui_parts import draw_link_buttons, draw_link_messages, draw_slot_link_editor, draw_slot_target_selector
-from .util import context_valid, needs_migrate_2_0
+from .link_validator import validate_action
 
 
 def _draw_editor(self, context: bpy.types.Context):
@@ -16,7 +16,6 @@ def _draw_editor(self, context: bpy.types.Context):
 	layout.separator(factor=2, type="LINE")
 	draw_slot_link_editor(layout, context.active_action)
 
-
 def _draw_slot_link_selector(self, context: bpy.types.Context):
 	"""Draw the target-selector GUI for the Slot panel"""
 	if(not context_valid(context)):
@@ -25,8 +24,28 @@ def _draw_slot_link_selector(self, context: bpy.types.Context):
 	layout.label(text="Slot Link Target(s):")
 	draw_slot_target_selector(layout, context.active_action, context.active_action.slots.active, True)
 
+class SlotLinkEditor(bpy.types.Panel):
+	"""Link the Slots of an Action to animation targets"""
+	bl_idname = "OBJECT_PT_slot_link_editor"
+	bl_label = "Slot Link Editor"
+	bl_region_type = "UI"
+	bl_space_type = "DOPESHEET_EDITOR"
+	bl_category = "Action"
+	bl_order = -10
+
+	@classmethod
+	def poll(cls, context: bpy.types.Context):
+		return context_valid(context) and get_preferences().use_separate_editor
+
+	def draw_header(self, context: bpy.types.Context):
+		self.layout.label(icon="DECORATE_LINKED")
+
+	def draw(self, context: bpy.types.Context):
+		draw_slot_link_editor(self.layout, context.active_action)
+
 
 class SlotLinkMenu(bpy.types.Menu):
+	"""Link the Slots of an Action to animation targets"""
 	bl_idname = "DOPESHEET_MT_slot_link_menu"
 	bl_label = "Slot Link"
 
@@ -49,7 +68,7 @@ class SlotLinkMenu(bpy.types.Menu):
 		layout.operator(ClearScene.bl_idname).full_reset = False
 		layout.operator(ClearScene.bl_idname, text="↳  ..including NLA", icon="WARNING_LARGE").full_reset = True
 
-def _draw_link_menu(self, context: bpy.types.Context):
+def _draw_link_header_menu(self, context: bpy.types.Context):
 	layout: bpy.types.UILayout = self.layout
 	if(context and context.space_data and context.space_data.mode == "ACTION"):
 		layout.menu(SlotLinkMenu.bl_idname)
@@ -63,38 +82,18 @@ def _draw_link_menu(self, context: bpy.types.Context):
 	draw_link_messages(layout, context.active_action, state, True)
 
 
-class SlotLinkEditor(bpy.types.Panel):
-	"""Link the Slots of an Action to their targets"""
-	bl_idname = "OBJECT_PT_slot_link_editor"
-	bl_label = "Slot Link Editor"
-	bl_region_type = "UI"
-	bl_space_type = "DOPESHEET_EDITOR"
-	bl_category = "Action"
-	bl_order = -10
-
-	@classmethod
-	def poll(cls, context: bpy.types.Context):
-		return context_valid(context) and get_preferences().use_separate_editor
-
-	def draw_header(self, context: bpy.types.Context):
-		self.layout.label(icon="DECORATE_LINKED")
-
-	def draw(self, context: bpy.types.Context):
-		draw_slot_link_editor(self.layout, context.active_action)
-
-
 def register():
 	bpy.utils.register_class(SlotLinkEditor)
 	bpy.utils.register_class(SlotLinkMenu)
 
-	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_link_menu)
+	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_link_header_menu)
 	bpy.types.DOPESHEET_PT_action.append(_draw_editor)
 	bpy.types.DOPESHEET_PT_action_slot.append(_draw_slot_link_selector)
 
 def unregister():
 	bpy.types.DOPESHEET_PT_action_slot.remove(_draw_slot_link_selector)
 	bpy.types.DOPESHEET_PT_action.remove(_draw_editor)
-	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_link_menu)
+	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_link_header_menu)
 
 	bpy.utils.unregister_class(SlotLinkMenu)
 	bpy.utils.unregister_class(SlotLinkEditor)

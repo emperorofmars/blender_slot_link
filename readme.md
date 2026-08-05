@@ -54,6 +54,10 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 * Operator to layout all Slot-Linked Actions into the NLA, so they can all be exported into FBX, without hassle. (And perhaps an operator to do the inverse.)
 * The ability to retarget animations from one target collection to another, deterministically.\
 	This will require artists to set matching `retargeting_id`s on objects of different collections. Build GUI to help and validation to help with that.
+* Replace the action editors action selector, with a super powered one.
+	* It should automatically link the action on selection.
+	* On creating a new action, it should prepare the scene for it immediately.
+	* The slot selector would list all slots, instead of just the ones available for the currently selected object. On creating a new slot, it should let you select the type and target immediately.
 
 ## License
 All source-code in this repository, except when noted in individual files and/or directories, is licensed under either:

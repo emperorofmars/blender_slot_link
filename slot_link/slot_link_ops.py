@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import Context
+from typing import Literal
 
 from .link_applier import link_slots, prepare_all_data_blocks
 from .slot_link import SlotLink, SlotLinkTarget, poll_slot_link_target
@@ -13,14 +13,14 @@ __all__ = ["SetupSlotLink", "SetupAction", "RemoveSlotLink", "LinkSlots", "Prepa
 class MigrateSlotLink_0_2(bpy.types.Operator):
 	"""Migrate SlotLink Data.
 
-	This is non destructive, and will allow you to specify multiple targets per Slot!"""
+	This is non destructive, and will allow you to specify multiple targets per Slot going forward!"""
 	bl_idname = "slot_link.migrate_0_2"
-	bl_label = "Migrate Slot Link Data"
+	bl_label = "Please Migrate Slot Link Data"
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
 	@classmethod
-	def poll(cls, context: Context) -> bool:
+	def poll(cls, context: bpy.types.Context) -> bool:
 		return needs_migrate_2_0()
 
 	def execute(self, context: bpy.types.Context) -> set:
@@ -235,17 +235,23 @@ class RemoveSlotLink(bpy.types.Operator):
 
 
 class ClearScene(bpy.types.Operator):
-	"""Clear the Scene of any animation data"""
+	"""Clear the Scene of animation data"""
 	bl_idname = "slot_link.clear_scene"
 	bl_label = "Clear Scene"
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
-	full_reset: bpy.props.BoolProperty(name="Full Reset (also Clear NLA data)", default=False, description="Fully recreate the animation-data. This will remove all NLA data!")
+	full_reset: bpy.props.BoolProperty(name="Full Reset (also Clear NLA data)", default=False, description="Fully recreate all animation-data. This will remove all NLA data!")
 
 	@classmethod
-	def poll(cls, context: Context) -> bool:
+	def poll(cls, context: bpy.types.Context) -> bool:
 		return len(bpy.data.actions) > 0
+
+	def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[Literal["RUNNING_MODAL", "CANCELLED", "FINISHED", "PASS_THROUGH", "INTERFACE"]]:
+		if(self.full_reset):
+			return context.window_manager.invoke_confirm(self, event, title="Clear All Scene Animation Data", message="This will clear all NLA data!", icon="WARNING")
+		else:
+			return self.execute(context)
 
 	def execute(self, context: bpy.types.Context) -> set:
 		prepare_all_data_blocks(None, self.full_reset)
@@ -294,7 +300,7 @@ class LinkSlots(bpy.types.Operator):
 			link_slots(action.slot_link.reset_animation, self.full_reset, action.slot_link.target_collection)
 			context.scene.frame_set(1)
 		# Link the desired action
-		link_slots(action, self.full_reset)
+		link_slots(action, self.full_reset, clear_outside_target_collection=True)
 		context.scene.frame_set(current_frame)
 		return {"FINISHED"}
 

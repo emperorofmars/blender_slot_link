@@ -1,12 +1,12 @@
 import bpy
 
-from .slot_link import ActionSlotLink, find_slot_link
-from .slot_link_ops import SetupSlotLink, AddSlotLinkTarget, MigrateSlotLink_0_2, RemoveSlotLink, LinkSlots, PrepareLinks, RemoveSlotLinkTarget, SetupAction
-from .link_applier import check_action, check_slot_link_target_unique, check_slot_link_all_targets_unique
-from .util import get_preferences, needs_migrate_2_0
+from .preferences import get_preferences
+from .slot_link import ActionSlotLink, SlotLinkTarget, find_slot_link
+from .slot_link_ops import SetupSlotLink, AddSlotLinkTarget, RemoveSlotLink, LinkSlots, PrepareLinks, RemoveSlotLinkTarget, SetupAction, MigrateSlotLink_0_2
+from .link_validator import SlotLinkActionState, SlotLinkError, check_slot_link_target_unique, check_slot_link_all_targets_unique, is_action_linked, validate_action
 
 
-__all__ = ["draw_link_messages", "draw_reset_animation_selector", "draw_link_buttons", "draw_slot_target_selector", "draw_orphan_slots", "draw_slot_link_editor"]
+__all__ = ["draw_link_messages", "draw_link_buttons", "draw_slot_target_selector", "draw_orphan_slots", "draw_slot_link_editor"]
 
 
 class SlotLinkList(bpy.types.UIList):
@@ -31,6 +31,8 @@ class SlotLinkList(bpy.types.UIList):
 				row.alert = True
 				row.label(text="NONE", icon="ERROR")
 				continue
+			if(active_data.target_collection and not link_target.target in active_data.target_collection.all_objects.values()):
+				row.alert = True
 			row.label(text=link_target.target.name, icon=("RIGHTARROW" if link_target_index == 0 else "THREE_DOTS"))
 			if(item.target_id_type in ["MATERIAL", "NODETREE"]):
 				row.label(icon="RIGHTARROW")
@@ -48,122 +50,86 @@ class SlotLinkList(bpy.types.UIList):
 					row.label(text=f"[ Material {link_target.datablock_index} ]", icon="ERROR")
 
 
-def draw_link_messages(layout: bpy.types.UILayout, action: bpy.types.Action, only_error: bool = False) -> int:
+def draw_link_messages(layout: bpy.types.UILayout, action: bpy.types.Action, state: SlotLinkActionState, only_error: bool = False) -> int:
 	"""Draw warnings"""
 
-	if(action.is_action_legacy):
-		if(action.users <= 1): # good enough
+	if(state.ok):
+		return 0
+	elif(state.error == SlotLinkError.NOT_LINKED and only_error):
+		return 1
+
+	match(state.error):
+		case SlotLinkError.NOT_LINKED:
+			row = layout.row()
+			row.alert = True
+			row.label(text="Not Linked!", icon="WARNING_LARGE")
+			return 0
+		case SlotLinkError.NOT_PREPARED:
 			row = layout.row()
 			row.alert = True
 			row.label(text="Prepare the Action!", icon="WARNING_LARGE")
 			return -1
-		if(action.users > 1):
+		case SlotLinkError.NO_SLOT:
 			row = layout.row()
 			row.label(text="Please add a new Slot! (animate anything)", icon="INFO")
 			return -1
-
-	if(needs_migrate_2_0()):
-		row = layout.row()
-		row.alert = True
-		row.label(text="Please migrate to newer data-model!")
-		return -1
-
-	# Check if some Slots want to be linked to the same datablock
-	for slot in action.slots:
-		if(not check_slot_link_all_targets_unique(action, slot)):
+		case SlotLinkError.SLOTS_DUPLICATE_TARGETS:
 			row = layout.row()
 			row.alert = True
 			row.label(text="Some Slots have duplicate Targets!", icon="WARNING_LARGE")
 			return 1
-
-	# Check if all Slots have targets
-	successes = 0
-	for slot in action.slots:
-		slot_link = find_slot_link(action, slot.handle)
-		if(not slot_link):
+		case SlotLinkError.SLOTS_NOT_SETUP:
 			row = layout.row()
 			row.alert = True
 			row.label(text="Some Slots are not set up!", icon="WARNING_LARGE")
 			return 1
-		if(slot_link and len(slot_link.targets) > 0): # TODO check if the target supports all animated properties
-			link_target_successes = 0
-			for link_target in slot_link.targets:
-				if(not link_target.target):
-					break
-				if(action.slot_link.target_collection and link_target.target not in action.slot_link.target_collection.all_objects.values()):
-					row = layout.row()
-					row.alert = True
-					row.label(text="Some Targets are outside Collection!", icon="WARNING_LARGE")
-					return 0
-				if(slot.target_id_type in ["MATERIAL", "NODETREE"]):
-					valid_material = True
-					if(link_target.target.material_slots and len(link_target.target.material_slots) <= link_target.datablock_index):
-						valid_material = False
-					elif(not link_target.target.material_slots[link_target.datablock_index].material):
-						valid_material = False
-					elif(slot.target_id_type == "NODETREE" and not link_target.target.material_slots[link_target.datablock_index].material.node_tree):
-						valid_material = False
-					if(not valid_material):
-						row = layout.row()
-						row.alert = True
-						row.label(text="Some Slots have invalid Material indices!", icon="WARNING_LARGE")
-						return 1
-				link_target_successes += 1
-			if(len(slot_link.targets) == link_target_successes):
-				successes += 1
-	if(successes < len(action.slots)):
-		row = layout.row()
-		row.alert = True
-		row.label(text="Not all Slots have Targets!", icon="WARNING_LARGE")
-		return 1
-
-	# Check whether this Action is linked everywhere correctly
-	if(not only_error and not check_action(action)):
-		row = layout.row()
-		row.alert = True
-		row.label(text="Not Linked!", icon="WARNING_LARGE")
-		return 0
-	return 0
-
-
-def draw_reset_animation_selector(layout: bpy.types.UILayout, action: bpy.types.Action):
-	"""Mark the Action as a reset animation, or select a reset animation"""
-	layout = layout.column(align=True)
-
-	layout.prop(action.slot_link, "target_collection")
-	layout.separator(factor=1, type="SPACE")
-
-	# Reset animation
-	if(not action.slot_link.reset_animation):
-		layout.prop(action.slot_link, "is_reset_animation")
-	if(not action.slot_link.is_reset_animation):
-		layout.prop(action.slot_link, "reset_animation")
-		if(action.slot_link.reset_animation and len(action.slot_link.reset_animation.slot_link.links) == 0):
+		case SlotLinkError.TARGETS_OUTSIDE_COLLECTION:
 			row = layout.row()
 			row.alert = True
-			row.label(text="The Reset Animation has no Targets!", icon="ERROR")
+			row.label(text="Some Targets are outside Collection!", icon="WARNING_LARGE")
+			return 0
+		case SlotLinkError.SLOTS_INVALID_MATERIAL_INDEX:
+			row = layout.row()
+			row.alert = True
+			row.label(text="Some Slots have invalid Material indices!", icon="WARNING_LARGE")
+			return 1
+		case SlotLinkError.SLOTS_MISSING_TARGET:
+			row = layout.row()
+			row.alert = True
+			row.label(text="Not all Slots have Targets!", icon="WARNING_LARGE")
+			return 1
+		case SlotLinkError.MIGRATION_2_0_NEEDED:
+			row = layout.row()
+			row.alert = True
+			row.label(text="Please migrate to newer data-model!")
+			return -1
+		case _:
+			row = layout.row()
+			row.alert = True
+			row.label(text="Unknown Error")
+			return -1
 
 
-def draw_link_buttons(layout: bpy.types.UILayout, action: bpy.types.Action, only_one_button: bool = False, scale: float = 1):
+def draw_link_buttons(layout: bpy.types.UILayout, action: bpy.types.Action, state: SlotLinkActionState, only_one_button: bool = False, scale: float = 1):
 	"""The main 'Link Slots' buttons"""
 
-	if(needs_migrate_2_0()):
+	if(state.error == SlotLinkError.MIGRATION_2_0_NEEDED):
 		row = layout.row()
 		row.alert = True
 		row.operator(MigrateSlotLink_0_2.bl_idname, icon="WARNING_LARGE")
 		return
 
 	# Prepare legacy/newly created Action
-	if(action.is_action_legacy):
+	if(state.error in [SlotLinkError.NOT_PREPARED, SlotLinkError.NO_SLOT]):
 		row = layout.row()
-		row.alert = not check_action(action)
+		row.alert = state.error == SlotLinkError.NOT_PREPARED
 		row.operator(PrepareLinks.bl_idname)
 		return
 
 	# Main link button
 	row = layout.row(align=True)
 	row.alignment = "EXPAND"
-	row.alert = not check_action(action)
+	row.alert = state.error == SlotLinkError.NOT_LINKED or not is_action_linked(action)
 	row.scale_x = row.scale_y = scale
 	row.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED").use_reset_animation = True
 	if(not only_one_button and action.slot_link.reset_animation):
@@ -198,6 +164,7 @@ def draw_slot_target_selector(layout: bpy.types.UILayout, action: bpy.types.Acti
 
 		any_error = False
 		for link_target_index, link_target in enumerate(slot_link.targets):
+			link_target: SlotLinkTarget = link_target
 			target_layout = layout.column()
 			if(not link_target.target):
 				target_layout.alert = True
@@ -288,9 +255,26 @@ def draw_slot_link_editor(layout: bpy.types.UILayout, action: bpy.types.Action):
 		else:
 			row.link(text="Slot Link Documentation", icon="HELP", url="https://docs.stfform.at/guide/blender/slot_link.html")
 
-	draw_reset_animation_selector(layout, action)
+	# Target collection
+	col = layout.column(align=True)
+	col.prop(action.slot_link, "target_collection")
+	col.separator(factor=1, type="SPACE")
+
+	# Reset animation
+	if(not action.slot_link.reset_animation):
+		col.prop(action.slot_link, "is_reset_animation")
+	if(not action.slot_link.is_reset_animation):
+		col.prop(action.slot_link, "reset_animation")
+		if(action.slot_link.reset_animation and len(action.slot_link.reset_animation.slot_link.links) == 0):
+			row = col.row()
+			row.alert = True
+			row.label(text="The Reset Animation has no Targets!", icon="ERROR")
+
 	layout.separator(factor=1)
-	state = draw_link_messages(layout, action)
+
+	# Messages
+	state = validate_action(action)
+	draw_link_messages(layout, action, state)
 
 	for slot in action.slots:
 		if(not find_slot_link(action, slot.handle)):
@@ -299,13 +283,16 @@ def draw_slot_link_editor(layout: bpy.types.UILayout, action: bpy.types.Action):
 			row.operator(SetupAction.bl_idname, icon="AUTO")
 			break
 
-	draw_link_buttons(layout, action, scale=1.3)
-	if(state < 0): return
+	draw_link_buttons(layout, action, state, scale=1.3)
 
+	if(state.error in [SlotLinkError.NOT_PREPARED, SlotLinkError.NO_SLOT, SlotLinkError.MIGRATION_2_0_NEEDED]):
+		return
+
+	# Slot Link list
 	if(not get_preferences().hide_slot_link_list):
 		layout.template_list(SlotLinkList.bl_idname, "", action, "slots", action.slot_link, "active_index")
 		draw_slot_target_selector(layout, action)
-	elif(state == 1):
+	elif(state.error in [SlotLinkError.SLOTS_NOT_SETUP, SlotLinkError.SLOTS_MISSING_TARGET, SlotLinkError.SLOTS_INVALID_MATERIAL_INDEX, SlotLinkError.SLOTS_DUPLICATE_TARGETS, SlotLinkError.TARGETS_OUTSIDE_COLLECTION]):
 		row = layout.row()
 		row_icon = row.row()
 		row_text = row.column(align=True)

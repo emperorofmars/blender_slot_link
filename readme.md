@@ -50,6 +50,11 @@ Human made contributions via pull-requests are very welcome.
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
+### Features to Consider in the Future
+* Operator to layout all Slot-Linked Actions into the NLA, so they can all be exported into FBX, without hassle. (And perhaps an operator to do the inverse.)
+* The ability to retarget animations from one target collection to another, deterministically.\
+	This will require artists to set matching `retargeting_id`s on objects of different collections. Build GUI to help and validation to help with that.
+
 ## License
 All source-code in this repository, except when noted in individual files and/or directories, is licensed under either:
 

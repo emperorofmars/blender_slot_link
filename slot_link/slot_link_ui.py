@@ -1,9 +1,11 @@
 #pyright: reportArgumentType=none
 import bpy
 
+from .link_validator import validate_action
+from .preferences import get_preferences
 from .slot_link_ops import ClearScene, LinkSlots, MigrateSlotLink_0_2, PrepareLinks, SetupAllActions
 from .slot_link_ui_parts import draw_link_buttons, draw_link_messages, draw_slot_link_editor, draw_slot_target_selector
-from .util import context_valid, get_preferences, needs_migrate_2_0
+from .util import context_valid, needs_migrate_2_0
 
 
 def _draw_editor(self, context: bpy.types.Context):
@@ -39,23 +41,26 @@ class SlotLinkMenu(bpy.types.Menu):
 			layout.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED").use_reset_animation = True
 			col = layout.column()
 			col.enabled = context.active_action.slot_link.reset_animation is not None
-			col.operator(LinkSlots.bl_idname, text="..without Reset").use_reset_animation = False
+			col.operator(LinkSlots.bl_idname, text="↳  ..without Reset").use_reset_animation = False
 
 		layout.separator(factor=1, type="LINE")
 		layout.operator(SetupAllActions.bl_idname)
-		layout.operator(ClearScene.bl_idname)
+		layout.separator(factor=1, type="LINE")
+		layout.operator(ClearScene.bl_idname).full_reset = False
+		layout.operator(ClearScene.bl_idname, text="↳  ..including NLA", icon="WARNING_LARGE").full_reset = True
 
 def _draw_link_menu(self, context: bpy.types.Context):
+	layout: bpy.types.UILayout = self.layout
 	if(context and context.space_data and context.space_data.mode == "ACTION"):
-		self.layout.menu(SlotLinkMenu.bl_idname)
+		layout.menu(SlotLinkMenu.bl_idname)
 
 	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
 		return
-
-	self.layout.separator(factor=6)
-	draw_link_buttons(self.layout, context.active_action, True)
-	self.layout.separator(factor=2)
-	draw_link_messages(self.layout, context.active_action, True)
+	layout.separator(factor=3)
+	state = validate_action(context.active_action)
+	draw_link_buttons(layout, context.active_action, state, True)
+	layout.separator(factor=1.5)
+	draw_link_messages(layout, context.active_action, state, True)
 
 
 class SlotLinkEditor(bpy.types.Panel):

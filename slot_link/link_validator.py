@@ -6,7 +6,7 @@ from .slot_link import SlotLinkTarget, find_slot_link, retrieve_animation_data_h
 from .util import blender_data_keys, blender_data_subkeys, needs_migrate_2_0
 
 
-__all__ = ["is_action_linked", "check_slot_link_target_unique", "check_slot_link_all_targets_unique", "SlotLinkError", "SlotLinkActionState", "validate_action"]
+__all__ = ["is_action_linked", "check_slot_link_target_unique", "check_slot_link_all_targets_unique", "SlotLinkError", "SlotLinkActionState", "validate_action", "is_nla_clean"]
 
 
 def _has_animation_data(blender_data_block: bpy.types.ID) -> bool:
@@ -192,3 +192,29 @@ def validate_action(action: bpy.types.Action) -> SlotLinkActionState:
 		return SlotLinkActionState(False, SlotLinkError.NOT_LINKED)
 
 	return SlotLinkActionState(True)
+
+
+def is_nla_clean() -> bool:
+	def _is_datablock_clean(thing):
+		if(not hasattr(thing, "animation_data") or not thing.animation_data):
+			return True
+		animdata: bpy.types.AnimData = thing.animation_data
+		if(animdata.use_nla and animdata.nla_tracks is not None and len(animdata.nla_tracks) > 0):
+			return False
+		return True
+
+	def _check_subkeys(thing):
+		for sub_key in blender_data_subkeys:
+			if(hasattr(thing, sub_key)):
+				if(not _is_datablock_clean(getattr(thing, sub_key))):
+					return False
+		return True
+
+	for data_key in blender_data_keys:
+		thing_type = getattr(bpy.data, data_key)
+		for thing in thing_type:
+			if(not _is_datablock_clean(thing) or not _check_subkeys(thing)):
+				return False
+
+	return True
+

@@ -3,7 +3,7 @@ import bpy
 from .preferences import get_preferences
 from .slot_link import ActionSlotLink, SlotLinkTarget, find_slot_link
 from .slot_link_ops import SetupSlotLink, AddSlotLinkTarget, RemoveSlotLink, LinkSlots, PrepareLinks, RemoveSlotLinkTarget, SetupAction, MigrateSlotLink_0_2
-from .link_validator import SlotLinkActionState, SlotLinkError, check_slot_link_target_unique, check_slot_link_all_targets_unique, is_action_linked, validate_action
+from .link_validator import SlotLinkActionState, SlotLinkError, check_slot_link_target_unique, check_slot_link_all_targets_unique, is_action_linked, is_nla_clean, validate_action
 
 
 __all__ = ["draw_link_messages", "draw_link_buttons", "draw_slot_target_selector", "draw_orphan_slots", "draw_slot_link_editor"]
@@ -52,6 +52,10 @@ class SlotLinkList(bpy.types.UIList):
 
 def draw_link_messages(layout: bpy.types.UILayout, action: bpy.types.Action, state: SlotLinkActionState, only_error: bool = False) -> int:
 	"""Draw warnings"""
+
+	if(not is_nla_clean()):
+		row = layout.row()
+		row.label(text="Actions stashed on NLA, consider clearing them!", icon="INFO_LARGE")
 
 	if(state.ok):
 		return 0

@@ -45,6 +45,15 @@ class SlotLinkEditor(bpy.types.Panel):
 		draw_slot_link_editor(self.layout, context.active_action)
 
 
+class SlotLinkExportMenu(bpy.types.Menu):
+	bl_idname = "DOPESHEET_MT_slot_link_export_menu"
+	bl_label = "Export"
+
+	def draw(self, context: bpy.types.Context):
+		layout: bpy.types.UILayout = self.layout # pyright: ignore[reportAssignmentType]
+		layout.operator(ToNLA.bl_idname)
+		layout.operator(ExportFBX.bl_idname)
+
 class SlotLinkMenu(bpy.types.Menu):
 	"""Link the Slots of an Action to animation targets"""
 	bl_idname = "DOPESHEET_MT_slot_link_menu"
@@ -69,8 +78,7 @@ class SlotLinkMenu(bpy.types.Menu):
 		layout.operator(ClearScene.bl_idname).full_reset = False
 		layout.operator(ClearScene.bl_idname, text="↳  ..including NLA", icon="WARNING_LARGE").full_reset = True
 		layout.separator(factor=1, type="LINE")
-		layout.operator(ToNLA.bl_idname)
-		layout.operator(ExportFBX.bl_idname)
+		layout.menu(SlotLinkExportMenu.bl_idname)
 
 def _draw_link_header_menu(self, context: bpy.types.Context):
 	layout: bpy.types.UILayout = self.layout
@@ -88,6 +96,7 @@ def _draw_link_header_menu(self, context: bpy.types.Context):
 
 def register():
 	bpy.utils.register_class(SlotLinkEditor)
+	bpy.utils.register_class(SlotLinkExportMenu)
 	bpy.utils.register_class(SlotLinkMenu)
 
 	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_link_header_menu)
@@ -100,4 +109,5 @@ def unregister():
 	bpy.types.DOPESHEET_MT_editor_menus.remove(_draw_link_header_menu)
 
 	bpy.utils.unregister_class(SlotLinkMenu)
+	bpy.utils.unregister_class(SlotLinkExportMenu)
 	bpy.utils.unregister_class(SlotLinkEditor)

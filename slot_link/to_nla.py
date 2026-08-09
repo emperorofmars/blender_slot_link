@@ -45,7 +45,7 @@ def _setup_all_actions_to_nla():
 class ToNLA(bpy.types.Operator):
 	"""Setup all slot link animations onto the NLA in an export ready representation"""
 	bl_idname = "slot_link.to_nla"
-	bl_label = "Prepare NLA Export"
+	bl_label = "Setup NLA for Export"
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 

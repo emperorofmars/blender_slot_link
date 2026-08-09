@@ -2,7 +2,7 @@
 **Animation For Video Games Made Easy!**
 
 Blender supports only one animation per .blend file.\
-Actions are modular pieces from which the one animation is composed.
+Actions are modular pieces from which the one animation is composed of.
 
 **Slot Link redefines Actions to be full standalone animations.**\
 To achieve that, you have to set the animation targets for each Action-Slot.

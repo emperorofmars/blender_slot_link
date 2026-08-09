@@ -3,14 +3,13 @@ from typing import Literal
 
 from .slot_link import find_slot, retrieve_animation_data_holder
 from .link_applier import prepare_all_data_blocks
+from .util import is_any_action_valid
 
 
 __all__ = ["ToNLA"]
 
 
-def _setup_action_to_nla(action: bpy.types.Action, start_frame: int | None = None) -> int:
-	if(start_frame is None):
-		start_frame = int(action.frame_range[0])
+def _setup_action_to_nla(action: bpy.types.Action, start_frame: int = 1) -> int:
 	for slot_link in action.slot_link.links:
 		slot = find_slot(action, slot_link.slot_handle)
 		if(not slot):
@@ -40,7 +39,7 @@ class ToNLA(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context: bpy.types.Context) -> bool:
-		return len(bpy.data.actions) > 0
+		return len(bpy.data.actions) > 0 and is_any_action_valid()
 
 	def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[Literal["RUNNING_MODAL", "CANCELLED", "FINISHED", "PASS_THROUGH", "INTERFACE"]]:
 		return context.window_manager.invoke_confirm(self, event, title="Prepare NLA Export", message="This will clear all NLA data!", icon="WARNING")
@@ -48,7 +47,7 @@ class ToNLA(bpy.types.Operator):
 	def execute(self, context: bpy.types.Context) -> set:
 		prepare_all_data_blocks(None, True)
 
-		start_frame: int | None = None
+		start_frame = 1
 		for action in bpy.data.actions:
 			if(action.slot_link.is_reset_animation):
 				start_frame = _setup_action_to_nla(action, start_frame)

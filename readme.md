@@ -1,14 +1,15 @@
 # Blender Slot Link
-**Slot Link helps you manage Blender projects with multiple separate animations.**
+**Animation For Video Games Made Easy!**
 
 Blender supports only one animation per .blend file.\
-Actions are modular pieces from which the one animation is composed of.
+Actions are modular pieces from which the one animation is composed.
 
 **Slot Link redefines Actions to be full standalone animations.**\
 To achieve that, you have to set the animation targets for each Action-Slot.
 
 Press the `Link Slots` button to play and edit an animation.\
-Easily switch between animations with only one additional button press.
+Easily switch between animations.\
+Export all slot-linked animations into FBX without any hassle!
 
 *Requires Blender 4.5 or higher. Not compatible with legacy Actions.*
 
@@ -51,7 +52,7 @@ Human made contributions via pull-requests are very welcome.
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
 ### Features to Consider in the Future
-* Operator to layout all Slot-Linked Actions into the NLA, so they can all be exported into FBX, without hassle. (And perhaps an operator to do the inverse.)
+* Operator to parse the NLA to setup slot links from that.
 * The ability to retarget animations from one target collection to another, deterministically.\
 	This will require artists to set matching `retargeting_id`s on objects of different collections. Build GUI to help and validation to help with that.
 * Replace the action editors action selector, with a super powered one.

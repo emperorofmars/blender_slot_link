@@ -54,7 +54,7 @@ class ToNLA(bpy.types.Operator):
 		return len(bpy.data.actions) > 0 and is_any_action_valid() and not needs_migrate_2_0()
 
 	def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[Literal["RUNNING_MODAL", "CANCELLED", "FINISHED", "PASS_THROUGH", "INTERFACE"]]:
-		return context.window_manager.invoke_confirm(self, event, title="Prepare NLA Export", message="This will clear all NLA data!", icon="WARNING")
+		return context.window_manager.invoke_confirm(self, event, title="Prepare NLA Export", message="This will clear all NLA data!\n\nBe sure to press \"Clear Scene ..including NLA\" after export.", icon="WARNING")
 
 	def execute(self, context: bpy.types.Context) -> set:
 		_setup_all_actions_to_nla()
@@ -62,7 +62,7 @@ class ToNLA(bpy.types.Operator):
 
 
 class ExportFBX(bpy.types.Operator):
-	"""Setup all slot link animations onto the NLA and open the FBX exporter with sane settings"""
+	"""Setup all slot link animations onto the NLA and open the FBX exporter with sane default settings"""
 	bl_idname = "slot_link.export_fbx"
 	bl_label = "Export FBX"
 	bl_category = "anim"
@@ -73,7 +73,7 @@ class ExportFBX(bpy.types.Operator):
 		return len(bpy.data.actions) > 0 and is_any_action_valid() and not needs_migrate_2_0()
 
 	def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[Literal["RUNNING_MODAL", "CANCELLED", "FINISHED", "PASS_THROUGH", "INTERFACE"]]:
-		return context.window_manager.invoke_confirm(self, event, title="NLA to FBX Export", message="This will clear all NLA data!", icon="WARNING")
+		return context.window_manager.invoke_confirm(self, event, title="NLA to FBX Export", message="This will clear all NLA data!\n\nBe sure to press \"Clear Scene ..including NLA\" afterwards.", icon="WARNING")
 
 	def execute(self, context: bpy.types.Context) -> set:
 		_setup_all_actions_to_nla()
@@ -85,7 +85,6 @@ class ExportFBX(bpy.types.Operator):
 			use_space_transform=True,
 			bake_space_transform=False,
 			use_mesh_modifiers=False,
-			add_leaf_bones=False,
 			bake_anim_use_all_bones=False,
 			bake_anim_use_nla_strips=True,
 			bake_anim_use_all_actions=False,

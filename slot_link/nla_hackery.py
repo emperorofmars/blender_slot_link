@@ -15,6 +15,8 @@ def _setup_action_to_nla(action: bpy.types.Action, start_frame: int = 1) -> int:
 		if(not slot):
 			continue
 		for link_target in slot_link.targets:
+			if(not link_target.target):
+				continue
 			animdata_holder = retrieve_animation_data_holder(slot.target_id_type, link_target.target, link_target.datablock_index)
 			if(not animdata_holder):
 				continue

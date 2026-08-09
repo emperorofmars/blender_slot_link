@@ -76,14 +76,16 @@ class SlotLinkMenu(bpy.types.Menu):
 		layout.operator(SetupAllActions.bl_idname)
 		layout.separator(factor=1, type="LINE")
 		layout.operator(ClearScene.bl_idname).full_reset = False
-		layout.operator(ClearScene.bl_idname, text="↳  ..including NLA", icon="WARNING_LARGE").full_reset = True
+		layout.operator(ClearScene.bl_idname, text="↳  ..including NLA").full_reset = True
 		layout.separator(factor=1, type="LINE")
 		layout.menu(SlotLinkExportMenu.bl_idname)
 
 def _draw_link_header_menu(self, context: bpy.types.Context):
+	if(not context or not context.space_data or context.space_data.mode != "ACTION"):
+		return
 	layout: bpy.types.UILayout = self.layout
-	if(context and context.space_data and context.space_data.mode == "ACTION"):
-		layout.menu(SlotLinkMenu.bl_idname)
+
+	layout.menu(SlotLinkMenu.bl_idname)
 
 	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
 		return

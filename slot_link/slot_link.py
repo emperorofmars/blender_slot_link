@@ -125,6 +125,8 @@ def retrieve_animation_data_holder(target_id_type: str, target_object: bpy.types
 	:param int datablock_index: In case the target_id_type is "MATERIAL" or "NODETREE", retrieve the appropriate material or its node_tree.
 	:returns bpy.types.ID | None: The property that has the desired `animation_data` property.
 	"""
+	if(not target_object): # Just in case
+		return False
 	match(target_id_type):
 		case "OBJECT":
 			return target_object

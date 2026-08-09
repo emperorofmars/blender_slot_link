@@ -128,6 +128,11 @@ def _setup_slot_link_from_nla():
 					case _:
 						print(f"Unsupported `target_id_type`: {strip.action_slot.target_id_type}")
 
+		for action in bpy.data.actions:
+			for slot_link in action.slot_link.links:
+				if(len(slot_link.targets) == 0):
+					slot_link.targets.add()
+
 	def _check_subkeys(thing):
 		for sub_key in blender_data_subkeys:
 			if(hasattr(thing, sub_key)):

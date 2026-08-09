@@ -4,6 +4,7 @@ import bpy
 from .util import context_valid, needs_migrate_2_0
 from .preferences import get_preferences
 from .slot_link_ops import ClearScene, LinkSlots, MigrateSlotLink_0_2, PrepareLinks, SetupAllActions
+from .to_nla import ToNLA
 from .slot_link_ui_parts import draw_link_buttons, draw_link_messages, draw_slot_link_editor, draw_slot_target_selector
 from .link_validator import validate_action
 
@@ -67,6 +68,8 @@ class SlotLinkMenu(bpy.types.Menu):
 		layout.separator(factor=1, type="LINE")
 		layout.operator(ClearScene.bl_idname).full_reset = False
 		layout.operator(ClearScene.bl_idname, text="↳  ..including NLA", icon="WARNING_LARGE").full_reset = True
+		layout.separator(factor=1, type="LINE")
+		layout.operator(ToNLA.bl_idname)
 
 def _draw_link_header_menu(self, context: bpy.types.Context):
 	layout: bpy.types.UILayout = self.layout

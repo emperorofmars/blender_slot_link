@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.3.0
+
 ## v0.2.0
 * Added support for linking multiple targets per SlotLink!
 	* Existing data has to be migrated with one convenient button-press.\

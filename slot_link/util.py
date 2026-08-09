@@ -44,7 +44,7 @@ def is_any_action_valid() -> bool:
 			for slot_link in action.slot_link.links:
 				if(slot_link.slot_handle == slot.handle):
 					for link_target in slot_link.targets:
-						if(retrieve_animation_data_holder(slot.target_id_type, link_target.target, link_target.datablock_index) is not None):
+						if(link_target.target and retrieve_animation_data_holder(slot.target_id_type, link_target.target, link_target.datablock_index) is not None):
 							return True
 	return False
 

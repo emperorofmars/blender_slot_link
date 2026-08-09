@@ -1,12 +1,12 @@
 import bpy
 from typing import Literal
 
-from .slot_link import find_slot, retrieve_animation_data_holder
+from .slot_link import find_slot, find_slot_link, retrieve_animation_data_holder
 from .link_applier import prepare_all_data_blocks
-from .util import is_any_action_valid, needs_migrate_2_0
+from .util import blender_data_keys, blender_data_subkeys, is_any_action_valid, needs_migrate_2_0
 
 
-__all__ = ["ToNLA"]
+__all__ = ["ToNLA", "ExportFBX", "FromNLA"]
 
 
 def _setup_action_to_nla(action: bpy.types.Action, start_frame: int = 1) -> int:
@@ -92,10 +92,79 @@ class ExportFBX(bpy.types.Operator):
 		)
 
 
+def _setup_slot_link_from_nla():
+	for action in bpy.data.actions:
+		action.slot_link.links.clear()
+
+	def _setup_slot_link(thing):
+		if(not hasattr(thing, "animation_data") or not thing.animation_data):
+			return
+		animdata: bpy.types.AnimData = thing.animation_data
+		if(animdata.nla_tracks is None or len(animdata.nla_tracks) == 0):
+			return
+		for track in animdata.nla_tracks:
+			for strip in track.strips:
+				if(not strip.action or not strip.action_slot):
+					continue
+				slot_link = find_slot_link(strip.action, strip.action_slot_handle)
+				if(not slot_link):
+					slot_link = strip.action.slot_link.links.add()
+					slot_link.slot_handle = strip.action_slot_handle
+
+				match strip.action_slot.target_id_type:
+
+					case "OBJECT":
+						link_target = slot_link.targets.add()
+						link_target.target = thing
+
+					case "KEY":
+						for blender_object in bpy.data.objects:
+							if(blender_object.data == thing.user):
+								link_target = slot_link.targets.add()
+								link_target.target = blender_object
+
+					# TODO other `target_id_type`s
+
+					case _:
+						print(f"Unsupported `target_id_type`: {strip.action_slot.target_id_type}")
+
+	def _check_subkeys(thing):
+		for sub_key in blender_data_subkeys:
+			if(hasattr(thing, sub_key)):
+				_setup_slot_link(getattr(thing, sub_key))
+
+	for data_key in blender_data_keys:
+		thing_type = getattr(bpy.data, data_key)
+		for thing in thing_type:
+			_setup_slot_link(thing)
+			_check_subkeys(thing)
+
+
+class FromNLA(bpy.types.Operator):
+	"""Setup slot link animations from the NLA"""
+	bl_idname = "slot_link.from_nla"
+	bl_label = "Setup from NLA"
+	bl_category = "anim"
+	bl_options = {"REGISTER", "UNDO"}
+
+	@classmethod
+	def poll(cls, context: bpy.types.Context) -> bool:
+		return len(bpy.data.actions) > 0 and is_any_action_valid() and not needs_migrate_2_0()
+
+	def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[Literal["RUNNING_MODAL", "CANCELLED", "FINISHED", "PASS_THROUGH", "INTERFACE"]]:
+		return context.window_manager.invoke_confirm(self, event, title="Setup Slot Link from NLA", message="This will overwrite all Slot Link data!", icon="WARNING")
+
+	def execute(self, context: bpy.types.Context) -> set:
+		_setup_slot_link_from_nla()
+		return {"FINISHED"}
+
+
 def register():
 	bpy.utils.register_class(ToNLA)
 	bpy.utils.register_class(ExportFBX)
+	bpy.utils.register_class(FromNLA)
 
 def unregister():
+	bpy.utils.unregister_class(FromNLA)
 	bpy.utils.unregister_class(ExportFBX)
 	bpy.utils.unregister_class(ToNLA)

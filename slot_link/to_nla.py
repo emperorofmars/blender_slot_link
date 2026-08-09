@@ -3,7 +3,7 @@ from typing import Literal
 
 from .slot_link import find_slot, retrieve_animation_data_holder
 from .link_applier import prepare_all_data_blocks
-from .util import is_any_action_valid
+from .util import is_any_action_valid, needs_migrate_2_0
 
 
 __all__ = ["ToNLA"]
@@ -39,7 +39,7 @@ class ToNLA(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context: bpy.types.Context) -> bool:
-		return len(bpy.data.actions) > 0 and is_any_action_valid()
+		return len(bpy.data.actions) > 0 and is_any_action_valid() and not needs_migrate_2_0()
 
 	def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[Literal["RUNNING_MODAL", "CANCELLED", "FINISHED", "PASS_THROUGH", "INTERFACE"]]:
 		return context.window_manager.invoke_confirm(self, event, title="Prepare NLA Export", message="This will clear all NLA data!", icon="WARNING")

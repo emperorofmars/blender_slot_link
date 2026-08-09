@@ -27,7 +27,7 @@ def _setup_action_to_nla(action: bpy.types.Action, start_frame: int = 1) -> int:
 			strip = track.strips.new(action.name, start_frame, action)
 			strip.action_slot = slot
 			strip.extrapolation = "NOTHING"
-	return start_frame + int(action.frame_range[1]) + 2
+	return start_frame + int(action.frame_range[1] - action.frame_range[0]) + 2
 
 
 class ToNLA(bpy.types.Operator):
@@ -56,7 +56,6 @@ class ToNLA(bpy.types.Operator):
 				start_frame = _setup_action_to_nla(action, start_frame)
 
 		return {"FINISHED"}
-
 
 
 def register():

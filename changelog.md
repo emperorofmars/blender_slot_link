@@ -4,6 +4,7 @@
 * Added an operator to setup all slot-linked animations onto the NLA in an export ready representation.
 	* Added an operator to to so and immediately open the FBX exporter with correct settings applied.
 * Added warning if the NLA is not empty.
+* Added selector for actions which immediately applies the selected action.
 
 ## v0.2.0
 * Added support for linking multiple targets per SlotLink!

@@ -5,7 +5,7 @@ from .util import context_valid, needs_migrate_2_0
 from .preferences import get_preferences
 from .slot_link_ops import ClearScene, LinkSlots, MigrateSlotLink_0_2, PrepareLinks, SetupAllActions
 from .nla_hackery import ExportFBX, ToNLA
-from .slot_link_ui_parts import draw_link_buttons, draw_link_messages, draw_slot_link_editor, draw_slot_target_selector
+from .slot_link_ui_parts import AnimationSelector, draw_link_buttons, draw_link_messages, draw_slot_link_editor, draw_slot_target_selector
 from .link_validator import validate_action
 
 
@@ -80,6 +80,7 @@ class SlotLinkMenu(bpy.types.Menu):
 		layout.separator(factor=1, type="LINE")
 		layout.menu(SlotLinkExportMenu.bl_idname)
 
+
 def _draw_link_header_menu(self, context: bpy.types.Context):
 	if(not context or not context.space_data or context.space_data.mode != "ACTION"):
 		return
@@ -88,11 +89,18 @@ def _draw_link_header_menu(self, context: bpy.types.Context):
 	layout.menu(SlotLinkMenu.bl_idname)
 
 	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
+		if(len(bpy.data.actions) > 0):
+			layout.operator(AnimationSelector.bl_idname, text="Select", icon="DOWNARROW_HLT")
 		return
 	layout.separator(factor=3)
+
+	layout.operator(AnimationSelector.bl_idname, text="Select", icon="DOWNARROW_HLT")
+
 	state = validate_action(context.active_action)
 	draw_link_buttons(layout, context.active_action, state, True)
+
 	layout.separator(factor=1.5)
+
 	draw_link_messages(layout, context.active_action, state, True)
 
 
@@ -104,6 +112,7 @@ def register():
 	bpy.types.DOPESHEET_MT_editor_menus.append(_draw_link_header_menu)
 	bpy.types.DOPESHEET_PT_action.append(_draw_editor)
 	bpy.types.DOPESHEET_PT_action_slot.append(_draw_slot_link_selector)
+
 
 def unregister():
 	bpy.types.DOPESHEET_PT_action_slot.remove(_draw_slot_link_selector)

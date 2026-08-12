@@ -24,9 +24,10 @@ Export all slot-linked animations into FBX without any hassle!
 >
 > This brings the data-model closer to how game engines and other tools work, but it may not always replay correctly in Blender.
 >
-> In case you animate the shape keys of a mesh-instance, Blender will play the animation on all instances of that mesh.\
+> In case you animate the shape keys of a mesh-instance, Blender will play the animation on all instances of that mesh.
 > Animating two instances of the same mesh differently is impossible.\
-> This is unfixable with extensions and has to be addressed in Blender natively.
+> This is unfixable with extensions and has to be addressed in Blender natively.\
+> *Please consider voting on the [Blender community issue](https://blender.community/c/rightclickselect/BO0X/?sorting=hot#).*
 >
 > The Slot Link data-model however is ready for export into game-engines, where it will correctly target only the specified instance of the mesh.\
 > The only importer/exporter capable of using SlotLink animations right now is the experimental [STF format](https://docs.stfform.at).

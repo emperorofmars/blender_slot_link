@@ -3,7 +3,7 @@ import bpy
 from .slot_link import retrieve_animation_data_holder
 
 
-__all__ = ["context_valid", "are_all_actions_setup", "is_any_action_valid", "ensure_selected_object", "blender_data_keys", "blender_data_subkeys", "needs_migrate_2_0"]
+__all__ = ["context_valid", "are_all_actions_setup", "is_any_action_valid", "ensure_action_remains_active", "blender_data_keys", "blender_data_subkeys", "needs_migrate_2_0"]
 
 
 ### TODO remove legacy data-model by 2027-08-01
@@ -49,7 +49,7 @@ def is_any_action_valid() -> bool:
 	return False
 
 
-def ensure_selected_object(context: bpy.types.Context, action: bpy.types.Action):
+def ensure_action_remains_active(context: bpy.types.Context, action: bpy.types.Action):
 	if(action.slot_link.target_collection and context.object not in action.slot_link.target_collection.all_objects.values()):
 		for slot_link in action.slot_link.links:
 			for link_target in slot_link.targets:

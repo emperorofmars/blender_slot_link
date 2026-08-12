@@ -3,7 +3,7 @@ from typing import Literal
 
 from .link_applier import link_action, prepare_all_data_blocks
 from .slot_link import SlotLink, SlotLinkTarget, poll_slot_link_target
-from .util import are_all_actions_setup, context_valid, ensure_selected_object, needs_migrate_2_0
+from .util import are_all_actions_setup, context_valid, ensure_action_remains_active, needs_migrate_2_0
 
 
 __all__ = ["SetupSlotLink", "SetupAction", "RemoveSlotLink", "LinkSlots", "PrepareLinks", "ClearScene", "CreateNew", "DuplicateAction", "MigrateSlotLink_0_2"]
@@ -281,7 +281,7 @@ class PrepareLinks(bpy.types.Operator):
 			return {"CANCELLED"}
 		action: bpy.types.Action = bpy.data.actions[self.action]
 		prepare_all_data_blocks(action)
-		ensure_selected_object(context, action)
+		ensure_action_remains_active(context, action)
 		return {"FINISHED"}
 
 
@@ -313,7 +313,7 @@ class LinkSlots(bpy.types.Operator):
 		action: bpy.types.Action = bpy.data.actions[self.action]
 
 		link_action(context, action, self.use_reset_animation, self.full_reset)
-		ensure_selected_object(context, action)
+		ensure_action_remains_active(context, action)
 		return {"FINISHED"}
 
 

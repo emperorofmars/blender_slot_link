@@ -1,12 +1,12 @@
 import bpy
 from typing import Literal
 
-from .link_applier import link_slots, prepare_all_data_blocks
+from .link_applier import link_action, prepare_all_data_blocks
 from .slot_link import SlotLink, SlotLinkTarget, poll_slot_link_target
 from .util import are_all_actions_setup, context_valid, needs_migrate_2_0
 
 
-__all__ = ["SetupSlotLink", "SetupAction", "RemoveSlotLink", "LinkSlots", "PrepareLinks", "ClearScene", "MigrateSlotLink_0_2"]
+__all__ = ["SetupSlotLink", "SetupAction", "RemoveSlotLink", "LinkSlots", "PrepareLinks", "ClearScene", "CreateNew", "DuplicateAction", "MigrateSlotLink_0_2"]
 
 
 ### TODO remove legacy data-model by 2027-08-01
@@ -266,12 +266,21 @@ class PrepareLinks(bpy.types.Operator):
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
+	action: bpy.props.StringProperty(name="Action", default="", description="The action to prepare", search=lambda self, context, text: [a.name for a in bpy.data.actions], search_options=set())
+
 	@classmethod
 	def poll(cls, context: bpy.types.Context) -> bool:
-		return context_valid(context)
+		return len(bpy.data.actions) > 0
+
+	def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[Literal["RUNNING_MODAL", "CANCELLED", "FINISHED", "PASS_THROUGH", "INTERFACE"]]:
+		self.action = self.action if self.action else (context.active_action.name if context_valid(context) else "")
+		return self.execute(context)
 
 	def execute(self, context: bpy.types.Context) -> set:
-		prepare_all_data_blocks(context.active_action)
+		if(self.action == "" or self.action not in bpy.data.actions):
+			return {"CANCELLED"}
+		action: bpy.types.Action = bpy.data.actions[self.action]
+		prepare_all_data_blocks(action)
 		return {"FINISHED"}
 
 
@@ -285,28 +294,63 @@ class LinkSlots(bpy.types.Operator):
 	bl_category = "anim"
 	bl_options = {"REGISTER", "UNDO"}
 
-	full_reset: bpy.props.BoolProperty(name="Full Reset (also Clear NLA data)", default=False, description="Fully recreate the animation-data. This will remove all NLA data!")
+	action: bpy.props.StringProperty(name="Action", default="", description="The action to link", search=lambda self, context, text: [a.name for a in bpy.data.actions], search_options=set())
 	use_reset_animation: bpy.props.BoolProperty(name="Use Reset Animation", default=True, description="If a Reset Animation is selected, it will be used to bring the Scene into a consistent state")
-	action_name: bpy.props.StringProperty(name="Action", default="", description="", search=lambda self, context, text: [a.name for a in bpy.data.actions])
+	full_reset: bpy.props.BoolProperty(name="Full Reset (also Clear NLA data)", default=False, description="Fully recreate the animation-data. This will remove all NLA data!")
 
 	@classmethod
 	def poll(cls, context: bpy.types.Context) -> bool:
-		return context_valid(context)
+		return len(bpy.data.actions) > 0
 
 	def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[Literal["RUNNING_MODAL", "CANCELLED", "FINISHED", "PASS_THROUGH", "INTERFACE"]]:
-		self.action_name = self.action_name if self.action_name else context.active_action.name
+		self.action = self.action if self.action else (context.active_action.name if context_valid(context) else "")
 		return self.execute(context)
 
 	def execute(self, context: bpy.types.Context) -> set:
-		# Link the reset animation first if applicable
-		current_frame = context.scene.frame_current
-		action: bpy.types.Action = context.active_action if self.action_name == "" or self.action_name not in bpy.data.actions else bpy.data.actions[self.action_name] # pyright: ignore[reportAssignmentType]
-		if(self.use_reset_animation and not action.slot_link.is_reset_animation and action.slot_link.reset_animation):
-			link_slots(action.slot_link.reset_animation, self.full_reset, action.slot_link.target_collection)
-			context.scene.frame_set(1)
-		# Link the desired action
-		link_slots(action, self.full_reset, clear_outside_target_collection=True)
-		context.scene.frame_set(current_frame)
+		if(self.action == "" or self.action not in bpy.data.actions):
+			return {"CANCELLED"}
+		action: bpy.types.Action = bpy.data.actions[self.action]
+
+		link_action(context, action, self.use_reset_animation, self.full_reset)
+		return {"FINISHED"}
+
+
+class CreateNew(bpy.types.Operator):
+	"""Create a new action and prepare it immediately"""
+	bl_idname = "slot_link.create_new"
+	bl_label = "Create New"
+	bl_category = "anim"
+	bl_options = {"REGISTER", "UNDO"}
+
+	def execute(self, context: bpy.types.Context) -> set:
+		action = bpy.data.actions.new("Action")
+		prepare_all_data_blocks(action)
+		return {"FINISHED"}
+
+
+class DuplicateAction(bpy.types.Operator):
+	"""Duplicate an action and link it immediately"""
+	bl_idname = "slot_link.duplicate_action"
+	bl_label = "Duplicate"
+	bl_category = "anim"
+	bl_options = {"REGISTER", "UNDO"}
+
+	action: bpy.props.StringProperty(name="Action", default="", description="The action to link", search=lambda self, context, text: [a.name for a in bpy.data.actions], search_options=set())
+
+	@classmethod
+	def poll(cls, context: bpy.types.Context) -> bool:
+		return len(bpy.data.actions) > 0
+
+	def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[Literal["RUNNING_MODAL", "CANCELLED", "FINISHED", "PASS_THROUGH", "INTERFACE"]]:
+		self.action = self.action if self.action else (context.active_action.name if context_valid(context) else "")
+		return self.execute(context)
+
+	def execute(self, context: bpy.types.Context) -> set:
+		if(self.action == "" or self.action not in bpy.data.actions):
+			return {"CANCELLED"}
+		action: bpy.types.Action = bpy.data.actions[self.action]
+
+		link_action(context, action.copy(), True, False)
 		return {"FINISHED"}
 
 
@@ -320,10 +364,16 @@ def register():
 	bpy.utils.register_class(ClearScene)
 	bpy.utils.register_class(PrepareLinks)
 	bpy.utils.register_class(LinkSlots)
+	bpy.utils.register_class(CreateNew)
+	bpy.utils.register_class(DuplicateAction)
+
 	bpy.utils.register_class(MigrateSlotLink_0_2)
 
 def unregister():
 	bpy.utils.unregister_class(MigrateSlotLink_0_2)
+
+	bpy.utils.unregister_class(DuplicateAction)
+	bpy.utils.unregister_class(CreateNew)
 	bpy.utils.unregister_class(LinkSlots)
 	bpy.utils.unregister_class(PrepareLinks)
 	bpy.utils.unregister_class(ClearScene)

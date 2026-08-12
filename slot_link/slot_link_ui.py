@@ -3,7 +3,7 @@ import bpy
 
 from .util import context_valid, needs_migrate_2_0
 from .preferences import get_preferences
-from .slot_link_ops import ClearScene, LinkSlots, MigrateSlotLink_0_2, PrepareLinks, SetupAllActions
+from .slot_link_ops import ClearScene, CreateNew, LinkSlots, MigrateSlotLink_0_2, PrepareLinks, SetupAllActions
 from .nla_hackery import ExportFBX, ToNLA
 from .slot_link_ui_parts import AnimationSelector, draw_link_buttons, draw_link_messages, draw_slot_link_editor, draw_slot_target_selector
 from .link_validator import validate_action
@@ -39,7 +39,7 @@ class SlotLinkEditor(bpy.types.Panel):
 		return context_valid(context) and get_preferences().use_separate_editor
 
 	def draw_header(self, context: bpy.types.Context):
-		self.layout.label(icon="DECORATE_LINKED")
+		self.layout.label(icon="LINKED")
 
 	def draw(self, context: bpy.types.Context):
 		draw_slot_link_editor(self.layout, context.active_action)
@@ -65,12 +65,16 @@ class SlotLinkMenu(bpy.types.Menu):
 		if(needs_migrate_2_0()):
 			layout.operator(MigrateSlotLink_0_2.bl_idname, icon="WARNING_LARGE")
 		elif(context_valid(context) and context.active_action.is_action_legacy):
-			layout.operator(PrepareLinks.bl_idname)
+			layout.operator(PrepareLinks.bl_idname).action = context.active_action.name
 		elif(context_valid(context)):
-			layout.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED").use_reset_animation = True
+			button = layout.operator(LinkSlots.bl_idname, text="Link Slots", icon="LINKED")
+			button.action = context.active_action.name
+			button.use_reset_animation = True
 			col = layout.column()
 			col.enabled = context.active_action.slot_link.reset_animation is not None
-			col.operator(LinkSlots.bl_idname, text="↳  ..without Reset").use_reset_animation = False
+			button = col.operator(LinkSlots.bl_idname, text="↳  ..without Reset")
+			button.action = context.active_action.name
+			button.use_reset_animation = False
 
 		layout.separator(factor=1, type="LINE")
 		layout.operator(SetupAllActions.bl_idname)
@@ -79,22 +83,25 @@ class SlotLinkMenu(bpy.types.Menu):
 		layout.operator(ClearScene.bl_idname, text="↳  ..including NLA").full_reset = True
 		layout.separator(factor=1, type="LINE")
 		layout.menu(SlotLinkExportMenu.bl_idname)
+		layout.separator(factor=1, type="LINE")
+		layout.operator(CreateNew.bl_idname, text="New Animation", icon="ADD")
 
 
 def _draw_link_header_menu(self, context: bpy.types.Context):
-	if(not context or not context.space_data or context.space_data.mode != "ACTION"):
+	if(not context or not context.space_data or context.space_data.mode not in ["DOPESHEET", "ACTION", "SHAPEKEY"]):
 		return
 	layout: bpy.types.UILayout = self.layout
 
 	layout.menu(SlotLinkMenu.bl_idname)
-
-	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
-		if(len(bpy.data.actions) > 0):
-			layout.operator(AnimationSelector.bl_idname, text="Select", icon="DOWNARROW_HLT")
-		return
 	layout.separator(factor=3)
 
-	layout.operator(AnimationSelector.bl_idname, text="Select", icon="DOWNARROW_HLT")
+	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
+		if(not get_preferences().hide_dopesheet_header_ui and len(bpy.data.actions) > 0):
+			layout.operator(AnimationSelector.bl_idname, text="Select", icon="DOWNARROW_HLT")
+		return
+
+	layout.operator(AnimationSelector.bl_idname, text="⮟", icon="ACTION")
+	layout.separator(factor=1)
 
 	state = validate_action(context.active_action)
 	draw_link_buttons(layout, context.active_action, state, True)

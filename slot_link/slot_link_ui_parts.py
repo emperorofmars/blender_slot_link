@@ -1,9 +1,10 @@
 import bpy
 from typing import Literal
+import math
 
 from .preferences import get_preferences
 from .slot_link import ActionSlotLink, SlotLinkTarget, find_slot_link
-from .slot_link_ops import SetupSlotLink, AddSlotLinkTarget, RemoveSlotLink, LinkSlots, PrepareLinks, RemoveSlotLinkTarget, SetupAction, MigrateSlotLink_0_2
+from .slot_link_ops import CreateNew, SetupSlotLink, AddSlotLinkTarget, RemoveSlotLink, LinkSlots, PrepareLinks, RemoveSlotLinkTarget, SetupAction, MigrateSlotLink_0_2
 from .link_validator import SlotLinkActionState, SlotLinkError, check_slot_link_target_unique, check_slot_link_all_targets_unique, is_action_linked, is_nla_clean, validate_action
 
 
@@ -34,7 +35,7 @@ class SlotLinkList(bpy.types.UIList):
 				continue
 			if(active_data.target_collection and not link_target.target in active_data.target_collection.all_objects.values()):
 				row.alert = True
-			row.label(text=link_target.target.name, icon=("RIGHTARROW" if link_target_index == 0 else "THREE_DOTS"))
+			row.label(text=link_target.target.name, icon=("RIGHTARROW" if link_target_index == 0 else "DOT"))
 			if(item.target_id_type in ["MATERIAL", "NODETREE"]):
 				row.label(icon="RIGHTARROW")
 				handled = False
@@ -128,7 +129,7 @@ def draw_link_buttons(layout: bpy.types.UILayout, action: bpy.types.Action, stat
 	if(state.error in [SlotLinkError.NOT_PREPARED, SlotLinkError.NO_SLOT]):
 		row = layout.row(align=True)
 		row.alert = state.error == SlotLinkError.NOT_PREPARED
-		row.operator(PrepareLinks.bl_idname)
+		row.operator(PrepareLinks.bl_idname).action = action.name
 		return
 
 	# Main link button
@@ -136,11 +137,15 @@ def draw_link_buttons(layout: bpy.types.UILayout, action: bpy.types.Action, stat
 	row.alignment = "EXPAND"
 	row.alert = state.error == SlotLinkError.NOT_LINKED or not is_action_linked(action)
 	row.scale_x = row.scale_y = scale
-	row.operator(LinkSlots.bl_idname, text="Link Slots", icon="DECORATE_LINKED").use_reset_animation = True
+	button = row.operator(LinkSlots.bl_idname, text="Link Slots", icon="LINKED")
+	button.action = action.name
+	button.use_reset_animation = True
 	if(not only_one_button and action.slot_link.reset_animation):
 		row = row.row(align=True)
 		row.alignment = "RIGHT"
-		row.operator(LinkSlots.bl_idname, text="..without Reset").use_reset_animation = False
+		button = row.operator(LinkSlots.bl_idname, text="..without Reset")
+		button.action = action.name
+		button.use_reset_animation = False
 
 
 def draw_slot_target_selector(layout: bpy.types.UILayout, action: bpy.types.Action, slot: bpy.types.ActionSlot | None = None, is_slot_panel: bool = False):
@@ -220,7 +225,7 @@ def draw_slot_target_selector(layout: bpy.types.UILayout, action: bpy.types.Acti
 			layout.separator(factor=0.5, type="SPACE")
 			row = layout.row()
 			row.alignment = "LEFT"
-			row.operator(AddSlotLinkTarget.bl_idname, icon="PLUS").slot_handle = slot_link.slot_handle
+			row.operator(AddSlotLinkTarget.bl_idname, icon="ADD").slot_handle = slot_link.slot_handle
 	else:
 		row = layout.row()
 		row.alert = True
@@ -313,13 +318,15 @@ class AnimationSelector(bpy.types.Operator):
 	bl_idname = "slot_link.animation_selector"
 	bl_label = "Select Animation"
 
-	entries_per_column: int = 10
+	entries_per_column: int = 12
+	col_width: int = 160
+	min_width: int = 220
 
 	use_reset: bpy.props.BoolProperty(name="Use Reset Animation (if set)", default=True)
-	filter: bpy.props.StringProperty(name="Filter", options={"TEXTEDIT_UPDATE"})
+	search_filter: bpy.props.StringProperty(name="Filter", options={"TEXTEDIT_UPDATE"})
 
 	def invoke(self, context: bpy.types.Context, event: bpy.types.Event) -> set[Literal["RUNNING_MODAL", "CANCELLED", "FINISHED", "PASS_THROUGH", "INTERFACE"]]:
-		return context.window_manager.invoke_popup(self, width=max(int(len(bpy.data.actions) / self.entries_per_column) * 140, 140)) # invoke_props_dialog
+		return context.window_manager.invoke_popup(self, width=max(int(len(bpy.data.actions) / self.entries_per_column) * self.col_width, self.min_width))
 
 	def execute(self, context: bpy.types.Context) -> set[Literal["RUNNING_MODAL", "CANCELLED", "FINISHED", "PASS_THROUGH", "INTERFACE"]]:
 		return {"FINISHED"}
@@ -328,51 +335,51 @@ class AnimationSelector(bpy.types.Operator):
 		layout: bpy.types.UILayout = self.layout # pyright: ignore[reportAssignmentType]
 		active_action = context.active_action if hasattr(context, "active_action") else None
 
-		row = layout.row()
+		row = layout.row(align=True)
 		row.label(text="Select Animation")
-		row.prop(self, "filter", text="", icon="VIEWZOOM")
+		row.prop(self, "search_filter", text="", icon="VIEWZOOM")
+		layout.prop(self, "use_reset")
 		layout.separator(factor=1, type="LINE")
 
 		reset_actions_filtered = []
 		actions_filtered = []
 		for action in bpy.data.actions:
-			if(not self.filter or self.filter.strip().lower() in action.name.lower()):
+			if(not self.search_filter or self.search_filter.strip().lower() in action.name.lower()):
 				if(action.slot_link.is_reset_animation):
 					reset_actions_filtered.append(action)
 				else:
 					actions_filtered.append(action)
 
 		def draw_item(layout: bpy.types.UILayout, action: bpy.types.Action):
-			item_layout = layout.row()
+			item_layout = layout.row(align=True)
 			item_layout.alignment = "LEFT"
 			item_layout.emboss = "PULLDOWN_MENU"
 			if(active_action == action):
 				item_layout.enabled = False
 			state = validate_action(action)
-			icon = "WARNING_LARGE" if not state.ok and state.error not in [SlotLinkError.NOT_LINKED, SlotLinkError.NOT_PREPARED, None] else "NONE"
-			button = item_layout.operator(LinkSlots.bl_idname, text=action.name, icon=icon)
-			button.action_name = action.name
+			icon = "WARNING_LARGE" if not state.ok and state.error not in [SlotLinkError.NOT_LINKED] else "NONE"
+			action_label = ("F " if action.use_fake_user else "0 ") + ("↻ " if action.slot_link.is_reset_animation else "") + action.name
+			button = item_layout.operator(LinkSlots.bl_idname, text=action_label, icon=icon)
+			button.action = action.name
 			button.use_reset_animation = self.use_reset
 
-		def draw_actions(actions: list[bpy.types.Action]):
-			num_cols = max(1, int(len(actions) / self.entries_per_column))
-			row = layout.row()
-			columns = []
-			for _ in range(num_cols):
-				columns.append(row.column())
+		num_cols = max(1, math.ceil(len(bpy.data.actions) / self.entries_per_column))
+		row = layout.row(align=True)
+		row.alignment = "LEFT"
+		columns = []
+		for _ in range(num_cols):
+			col = row.column(align=False)
+			col.alignment = "LEFT"
+			columns.append(col)
 
-			for item_idx in range(0, len(actions)):
-				col = columns[item_idx % num_cols]
-				draw_item(col, actions[item_idx])
-
-		if(len(reset_actions_filtered) > 0):
-			layout.label(text="Reset Animations")
-			draw_actions(reset_actions_filtered)
-		layout.label(text="Animations")
-		draw_actions(actions_filtered)
+		for item_idx, action in enumerate(reset_actions_filtered + actions_filtered):
+			col = columns[math.floor(item_idx / self.entries_per_column)]
+			draw_item(col, action)
 
 		layout.separator(factor=1, type="LINE")
-		layout.prop(self, "use_reset")
+		row = layout.row(align=True)
+		row.alignment = "LEFT"
+		row.operator(CreateNew.bl_idname, icon="ADD")
 
 
 def register():

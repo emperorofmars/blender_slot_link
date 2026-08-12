@@ -4,7 +4,7 @@ from .slot_link import SlotLink, find_slot, retrieve_animation_data_holder
 from .util import blender_data_keys, blender_data_subkeys
 
 
-__all__ = ["prepare_all_data_blocks", "link_slots"]
+__all__ = ["prepare_all_data_blocks", "link_slots", "link_action"]
 
 
 ## Prepare animation_data
@@ -129,3 +129,16 @@ def link_slots(action: bpy.types.Action, full_reset: bool = False, override_targ
 	for slot_link in action.slot_link.links:
 		if(slot := find_slot(action, slot_link.slot_handle)):
 			_link_slot(action, slot, slot_link, override_target_collection)
+
+def link_action(context: bpy.types.Context, action: bpy.types.Action, use_reset_animation: bool = True, full_reset: bool = False):
+	"""
+	Link the Action to all data-blocks in the Scene.
+	"""
+	# Link the reset animation first if applicable
+	current_frame = context.scene.frame_current
+	if(use_reset_animation and not action.slot_link.is_reset_animation and action.slot_link.reset_animation):
+		link_slots(action.slot_link.reset_animation, full_reset, action.slot_link.target_collection)
+		context.scene.frame_set(1)
+	# Link the desired action
+	link_slots(action, full_reset, clear_outside_target_collection=True)
+	context.scene.frame_set(current_frame)

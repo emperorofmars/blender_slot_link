@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.3.0
+## v1.0.0
 * Added an operator to setup all slot-linked animations onto the NLA in an export ready representation.
 	* Added an operator to to so and immediately open the FBX exporter with correct settings applied.
 * Added warning if the NLA is not empty.

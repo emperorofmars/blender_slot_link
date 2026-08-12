@@ -96,8 +96,11 @@ def _draw_link_header_menu(self, context: bpy.types.Context):
 	layout.separator(factor=3)
 
 	if(not context_valid(context) or get_preferences().hide_dopesheet_header_ui):
-		if(not get_preferences().hide_dopesheet_header_ui and len(bpy.data.actions) > 0):
-			layout.operator(AnimationSelector.bl_idname, text="Select", icon="DOWNARROW_HLT")
+		if(not get_preferences().hide_dopesheet_header_ui):
+			if(len(bpy.data.actions) > 0):
+				layout.operator(AnimationSelector.bl_idname, text="Select", icon="DOWNARROW_HLT")
+			else:
+				layout.operator(CreateNew.bl_idname, text="New Animation", icon="PLUS")
 		return
 
 	layout.operator(AnimationSelector.bl_idname, text="⮟", icon="ACTION")

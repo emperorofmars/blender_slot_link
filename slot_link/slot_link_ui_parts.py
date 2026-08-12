@@ -132,6 +132,14 @@ def draw_link_buttons(layout: bpy.types.UILayout, action: bpy.types.Action, stat
 		row.operator(PrepareLinks.bl_idname).action = action.name
 		return
 
+	for slot in action.slots:
+		if(not find_slot_link(action, slot.handle)):
+			row = layout.row()
+			row.alert = True
+			row.scale_x = row.scale_y = scale
+			row.operator(SetupAction.bl_idname, icon="AUTO")
+			return
+
 	# Main link button
 	row = layout.row(align=True)
 	row.alignment = "EXPAND"
@@ -285,14 +293,6 @@ def draw_slot_link_editor(layout: bpy.types.UILayout, action: bpy.types.Action):
 	# Messages
 	state = validate_action(action)
 	draw_link_messages(layout, action, state)
-
-	for slot in action.slots:
-		if(not find_slot_link(action, slot.handle)):
-			row = layout.row()
-			row.scale_x = row.scale_y = 1.3
-			row.operator(SetupAction.bl_idname, icon="AUTO")
-			break
-
 	draw_link_buttons(layout, action, state, scale=1.3)
 
 	if(state.error in [SlotLinkError.NOT_PREPARED, SlotLinkError.NO_SLOT, SlotLinkError.MIGRATION_2_0_NEEDED]):
